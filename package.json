@@ -1,0 +1,27 @@
+{
+  "name": "@pretendonetwork/ctr-tools",
+  "version": "1.0.0",
+  "description": "TypeScript library for interacting with several Nintendo 3DS file types",
+  "scripts": {
+    "lint": "npx eslint .",
+    "build": "npm run lint && npm run clean && npx tsc && npx tsc-alias && npm run copy-files",
+    "clean": "npx rimraf ./dist",
+    "copy-files": "cp package.json dist/package.json && cp README.md dist/README.md"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "@types/node-rsa": "^1.1.1",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "eslint": "^7.32.0",
+    "rimraf": "^5.0.1",
+    "tsc-alias": "^1.8.7"
+  },
+  "dependencies": {
+    "image-encode": "^1.3.1",
+    "node-rsa": "^1.1.1"
+  }
+}
