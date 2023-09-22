@@ -44,6 +44,7 @@ export class TMD {
 	public contentChunkRecords: ContentChunkRecord[] = [];
 	public selfCertificate: Certificate; // * Only seen if TMD came from the CDN. Verifies the TMD signature
 	public CACertificate: Certificate; // * Only seen if TMD came from the CDN. Verifies the TMDCertificate signature
+	public signatureBody: Buffer; // * Used to verify the signature
 
 	constructor(tmdOrStream: string | Buffer | Stream) {
 		if (tmdOrStream instanceof Stream) {
@@ -226,6 +227,8 @@ export class TMD {
 			this.selfCertificate = new Certificate(this.stream);
 			this.CACertificate = new Certificate(this.stream);
 		}
+
+		this.constructSignatureData();
 	}
 
 	private parseSignature(): void {
@@ -235,5 +238,39 @@ export class TMD {
 
 		this.signature = this.stream.readBytes(signatureSize.SIGNATURE);
 		this.stream.skip(signatureSize.PADDING);
+	}
+
+	private constructSignatureData(): void {
+		let size = 0xA4;
+
+		if (this.version === 1) {
+			size += 0x20;
+		}
+
+		this.signatureBody = Buffer.alloc(size);
+
+		this.signatureBody.write(this.issuer, 0x00);
+		this.signatureBody.writeUInt8(this.version, 0x40);
+		this.signatureBody.writeUInt8(this.caVersion, 0x41);
+		this.signatureBody.writeUInt8(this.signerVersion, 0x42);
+		this.signatureBody.writeUInt8(this.reserved1, 0x43);
+		this.signatureBody.writeBigUInt64BE(this.systemVersion, 0x44);
+		this.signatureBody.writeBigUInt64BE(this.titleID, 0x4C);
+		this.signatureBody.writeUInt32BE(this.titleType, 0x54);
+		this.signatureBody.writeUInt16BE(this.groupID, 0x58);
+		this.signatureBody.writeUInt32BE(this.saveDataSize, 0x5A);
+		this.signatureBody.writeUInt32BE(this.SRLPrivateSaveDataSize, 0x5E);
+		this.signatureBody.writeUInt32BE(this.reserved2, 0x62);
+		this.signatureBody.writeUInt8(this.SRLFlag, 0x66);
+		this.reserved3.copy(this.signatureBody, 0x67);
+		this.signatureBody.writeUInt32BE(this.accessRights, 0x98);
+		this.signatureBody.writeUInt16BE(this.titleVersion, 0x9C);
+		this.signatureBody.writeUInt16BE(this.contentCount, 0x9E);
+		this.signatureBody.writeUInt16BE(this.bootIndex, 0xA0);
+		this.signatureBody.writeUInt16BE(this.minorVersion, 0xA2);
+
+		if (this.version === 1) {
+			this.contentInfoRecordsHash.copy(this.signatureBody, 0xA4);
+		}
 	}
 }

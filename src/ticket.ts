@@ -30,6 +30,7 @@ export class Ticket {
 	public contentIndex: Buffer; // * Is this the same data in the TMD?
 	public selfCertificate?: Certificate; // * Only seen if ticket came from the CDN. Verifies the ticket signature
 	public CACertificate?: Certificate; // * Only seen if ticket came from the CDN. Verifies the ticketCertificate signature
+	public signatureBody: Buffer; // * Used to verify the signature
 
 	constructor(ticketOrStream: string | Buffer | Stream) {
 		if (ticketOrStream instanceof Stream) {
@@ -130,6 +131,7 @@ export class Ticket {
 
 	private parse(): void {
 		this.parseSignature();
+
 		this.issuer = this.stream.readBytes(0x40).toString().split('\0')[0];
 		this.publicECCKey = this.stream.readBytes(0x3C); // * What is this?
 		this.version = this.stream.readUInt8();
@@ -165,6 +167,8 @@ export class Ticket {
 			this.selfCertificate = new Certificate(this.stream);
 			this.CACertificate = new Certificate(this.stream);
 		}
+
+		this.constructSignatureData();
 	}
 
 	private parseSignature(): void {
@@ -174,5 +178,32 @@ export class Ticket {
 
 		this.signature = this.stream.readBytes(signatureSize.SIGNATURE);
 		this.stream.skip(signatureSize.PADDING);
+	}
+
+	private constructSignatureData(): void {
+		this.signatureBody = Buffer.alloc(0x164 + this.contentIndex.length);
+
+		this.signatureBody.write(this.issuer, 0x00);
+		this.publicECCKey.copy(this.signatureBody, 0x40);
+		this.signatureBody.writeUInt8(this.version, 0x7C);
+		this.signatureBody.writeUInt8(this.caVersion, 0x7D);
+		this.signatureBody.writeUInt8(this.signerVersion, 0x7E);
+		this.encryptedTitleKey.copy(this.signatureBody, 0x7F);
+		this.signatureBody.writeUInt8(this.reserved1, 0x8F);
+		this.signatureBody.writeBigUInt64BE(this.ticketID, 0x90);
+		this.signatureBody.writeUInt32BE(this.consoleID, 0x98);
+		this.signatureBody.writeBigUInt64BE(this.titleID, 0x9C);
+		this.signatureBody.writeUInt16BE(this.reserved2, 0xA4);
+		this.signatureBody.writeUInt16BE(this.titleVersion, 0xA6);
+		this.signatureBody.writeBigUInt64BE(this.reserved3, 0xA8);
+		this.signatureBody.writeUInt8(this.licenseType, 0xB0);
+		this.signatureBody.writeUInt8(this.commonKeyYIndex, 0xB1);
+		this.reserved4.copy(this.signatureBody, 0xB2);
+		this.signatureBody.writeUInt32BE(this.eShopAccountID, 0xDC);
+		this.signatureBody.writeUInt8(this.reserved5, 0xE0);
+		this.signatureBody.writeUInt8(this.audit, 0xE1);
+		this.reserved6.copy(this.signatureBody, 0xE2);
+		this.limits.copy(this.signatureBody, 0x124);
+		this.contentIndex.copy(this.signatureBody, 0x164);
 	}
 }

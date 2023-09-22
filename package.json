@@ -1,6 +1,6 @@
 {
   "name": "@pretendonetwork/ctr-tools",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript library for interacting with several Nintendo 3DS file types",
   "scripts": {
     "lint": "npx eslint .",

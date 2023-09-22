@@ -9,6 +9,11 @@ const KeyTypes = {
 	ECDSA_233R1: 0x2
 };
 
+export interface SignedData {
+	signature: Buffer;
+	signatureBody: Buffer;
+}
+
 export class Certificate {
 	private stream: FileStream;
 	public signatureType: number;
@@ -18,7 +23,7 @@ export class Certificate {
 	public name: string;
 	public expiration: number;
 	public publicKeyData: Buffer;
-	public certificateSignatureData: Buffer; // * Used to verify the signature
+	public signatureBody: Buffer; // * Used to verify the signature
 
 	constructor(fdOrCertificateOrStream: number | string | Buffer | FileStream) {
 		if (typeof fdOrCertificateOrStream === 'string') {
@@ -54,7 +59,7 @@ export class Certificate {
 
 		bytes.writeUInt32BE(this.signatureType, 0x0);
 		this.signature.copy(bytes, 0x4);
-		this.certificateSignatureData.copy(bytes, dataOffset);
+		this.signatureBody.copy(bytes, dataOffset);
 
 		return bytes;
 	}
@@ -66,7 +71,7 @@ export class Certificate {
 		this.name = this.stream.readBytes(0x40).toString().split('\0')[0];
 		this.expiration = this.stream.readUInt32BE();
 		this.readPublicKeyData();
-		this.constructCertificateSignatureData();
+		this.constructSignatureData();
 	}
 
 	private parseSignature(): void {
@@ -78,34 +83,33 @@ export class Certificate {
 		this.stream.skip(signatureSize.PADDING);
 	}
 
-	public verifySignature(signature: Buffer): boolean {
-		// ! THIS ALWAYS FAILS?? ARE WE USING THE WRONG KEYS??
+	public verifySignature(signedData: SignedData): boolean {
 		switch (this.keyType) {
 			case KeyTypes.RSA_4096:
 			case KeyTypes.RSA_2048:
-				return this.verifySignatureRSASHA256(signature);
+				return this.verifySignatureRSASHA256(signedData);
 			case KeyTypes.ECDSA_233R1:
-				return this.verifySignatureECDSASHA256(signature);
+				return this.verifySignatureECDSASHA256(signedData);
 		}
 
 		return false;
 	}
 
-	private verifySignatureRSASHA256(signature: Buffer): boolean {
+	private verifySignatureRSASHA256(signedData: SignedData): boolean {
 		const publicKey = new NodeRSA();
 
 		publicKey.importKey(this.exportKey(), 'pkcs1-public-pem');
 
-		return publicKey.verify(this.certificateSignatureData, signature);
+		return publicKey.verify(signedData.signatureBody, signedData.signature);
 	}
 
-	private verifySignatureECDSASHA256(signature: Buffer): boolean {
+	private verifySignatureECDSASHA256(signedData: SignedData): boolean {
 		const key: crypto.VerifyPublicKeyInput = {
 			key: this.exportKey(),
 			dsaEncoding: 'ieee-p1363'
 		};
 
-		return crypto.verify('sha256', this.certificateSignatureData, key, signature);
+		return crypto.verify('sha256', signedData.signatureBody, key, signedData.signature);
 	}
 
 	public exportKey(): string {
@@ -186,7 +190,7 @@ export class Certificate {
 		}
 	}
 
-	private constructCertificateSignatureData(): void {
+	private constructSignatureData(): void {
 		const body = Buffer.alloc(0x40 + 0x4 + 0x40 + 0x4);
 
 		body.write(this.issuer, 0x0, 0x40);
@@ -194,7 +198,7 @@ export class Certificate {
 		body.write(this.name, 0x44, 0x40);
 		body.writeUint32BE(this.expiration, 0x84);
 
-		this.certificateSignatureData = Buffer.concat([
+		this.signatureBody = Buffer.concat([
 			body,
 			this.publicKeyData
 		]);
