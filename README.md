@@ -6,12 +6,33 @@
 npm i @pretendonetwork/nintendo-files
 ```
 
-## Supported files
+## Supported files (parsing)
 - [x] CIA. Does not decrypt contents
 - [x] Certificates. Signature verification works, just not on illegitimate signatures (homebrew, forged tickets, etc)
 - [x] SMDH. All data is extracted, but some pieces (like several sections of Application Settings) are left as `Buffer` blobs
 - [x] TMD
 - [x] Ticket. Does not decrypt title key
+- [ ] Encrypted title parts (`.app` files)
+- [ ] Title hashes (`.h3` files)
+- [ ] Mii data
+- [ ] MSBT
+- [ ] BYML/BYAML
+- [ ] SARC
+- [ ] SZS (Yaz0)
+
+## Supported files (encoding)
+- [ ] CIA. Does not decrypt contents
+- [x] Certificates. Signature verification works, just not on illegitimate signatures (homebrew, forged tickets, etc)
+- [ ] SMDH. All data is extracted, but some pieces (like several sections of Application Settings) are left as `Buffer` blobs
+- [x] TMD
+- [x] Ticket. Does not decrypt title key
+- [ ] Encrypted title parts (`.app` files)
+- [ ] Title hashes (`.h3` files)
+- [ ] Mii data
+- [ ] MSBT
+- [ ] BYML/BYAML
+- [ ] SARC
+- [ ] SZS (Yaz0)
 
 ## Example
 ```ts
