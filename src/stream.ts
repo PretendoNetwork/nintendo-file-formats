@@ -7,23 +7,23 @@ export default class Stream {
 		this.buffer = buffer;
 	}
 
-	remaining(): number {
+	public remaining(): number {
 		return this.buffer.length - this.offset;
 	}
 
-	alignBlock(alignment: number): void {
+	public alignBlock(alignment: number): void {
 		this.offset = Math.ceil(this.offset / alignment) * alignment;
 	}
 
-	tell(): number {
+	public tell(): number {
 		return this.offset;
 	}
 
-	seek(offset: number): void {
+	public seek(offset: number): void {
 		this.offset = offset;
 	}
 
-	peek(offset?: number): number {
+	public peek(offset?: number): number {
 		if (offset === undefined) {
 			offset = this.offset;
 		}
@@ -31,58 +31,58 @@ export default class Stream {
 		return this.buffer[offset];
 	}
 
-	skip(value: number): void {
+	public skip(value: number): void {
 		this.offset += value;
 	}
 
-	read(length: number): Buffer {
+	public read(length: number): Buffer {
 		const read = this.buffer.subarray(this.offset, this.offset + length);
 		this.offset += length;
 
 		return read;
 	}
 
-	readBytes(length: number): Buffer {
+	public readBytes(length: number): Buffer {
 		return this.read(length);
 	}
 
-	readUInt8(): number {
+	public readUInt8(): number {
 		return this.readBytes(1).readUInt8();
 	}
 
-	readUInt16BE(): number {
+	public readUInt16BE(): number {
 		return this.readBytes(2).readUInt16BE();
 	}
 
-	readUInt32BE(): number {
+	public readUInt32BE(): number {
 		return this.readBytes(4).readUInt32BE();
 	}
 
-	readUInt64BE(): bigint {
+	public readUInt64BE(): bigint {
 		return this.readBytes(8).readBigInt64BE();
 	}
 
-	readUInt16LE(): number {
+	public readUInt16LE(): number {
 		return this.readBytes(2).readUInt16LE();
 	}
 
-	readUInt32LE(): number {
+	public readUInt32LE(): number {
 		return this.readBytes(4).readUInt32LE();
 	}
 
-	readUInt64LE(): bigint {
+	public readUInt64LE(): bigint {
 		return this.readBytes(8).readBigInt64LE();
 	}
 
-	readUInt16(): number {
+	public readUInt16(): number {
 		return this.bom === 'le' ? this.readUInt16LE() : this.readUInt16BE();
 	}
 
-	readUInt32(): number {
+	public readUInt32(): number {
 		return this.bom === 'le' ? this.readUInt32LE() : this.readUInt32BE();
 	}
 
-	readUInt64(): bigint {
+	public readUInt64(): bigint {
 		return this.bom === 'le' ? this.readUInt64LE() : this.readUInt64BE();
 	}
 }

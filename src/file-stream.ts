@@ -22,7 +22,7 @@ export default class FileStream extends Stream {
 		}
 	}
 
-	remaining(): number {
+	public remaining(): number {
 		if (this.fileSize) {
 			return this.fileSize - this.offset;
 		} else {
@@ -30,7 +30,7 @@ export default class FileStream extends Stream {
 		}
 	}
 
-	read(length: number): Buffer {
+	public read(length: number): Buffer {
 		let read: Buffer;
 
 		if (this.fd) {
