@@ -23,6 +23,14 @@ export default class Stream {
 		this.offset = offset;
 	}
 
+	peek(offset?: number): number {
+		if (offset === undefined) {
+			offset = this.offset;
+		}
+
+		return this.buffer[offset];
+	}
+
 	skip(value: number): void {
 		this.offset += value;
 	}
@@ -76,17 +84,5 @@ export default class Stream {
 
 	readUInt64(): bigint {
 		return this.bom === 'le' ? this.readUInt64LE() : this.readUInt64BE();
-	}
-
-	readUInt16(): number {
-		return this.bom === 'le' ? this.readUInt16LE() : this.readUInt16LE();
-	}
-
-	readUInt32(): number {
-		return this.bom === 'le' ? this.readUInt32LE() : this.readUInt32LE();
-	}
-
-	readUInt64(): bigint {
-		return this.bom === 'le' ? this.readUInt64LE() : this.readUInt64LE();
 	}
 }
