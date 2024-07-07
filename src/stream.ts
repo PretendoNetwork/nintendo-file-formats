@@ -1,6 +1,7 @@
 export default class Stream {
 	protected buffer: Buffer;
 	protected offset = 0;
+	public bom = 'le';
 
 	constructor(buffer: Buffer) {
 		this.buffer = buffer;
@@ -63,5 +64,29 @@ export default class Stream {
 
 	readUInt64LE(): bigint {
 		return this.readBytes(8).readBigInt64LE();
+	}
+
+	readUInt16(): number {
+		return this.bom === 'le' ? this.readUInt16LE() : this.readUInt16BE();
+	}
+
+	readUInt32(): number {
+		return this.bom === 'le' ? this.readUInt32LE() : this.readUInt32BE();
+	}
+
+	readUInt64(): bigint {
+		return this.bom === 'le' ? this.readUInt64LE() : this.readUInt64BE();
+	}
+
+	readUInt16(): number {
+		return this.bom === 'le' ? this.readUInt16LE() : this.readUInt16LE();
+	}
+
+	readUInt32(): number {
+		return this.bom === 'le' ? this.readUInt32LE() : this.readUInt32LE();
+	}
+
+	readUInt64(): bigint {
+		return this.bom === 'le' ? this.readUInt64LE() : this.readUInt64LE();
 	}
 }
