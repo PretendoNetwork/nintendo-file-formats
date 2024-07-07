@@ -1,58 +1,58 @@
 {
-  "name": "@pretendonetwork/nintendo-files",
-  "version": "1.0.0",
-  "description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
-  "scripts": {
-    "lint": "npx eslint .",
+	"name": "@pretendonetwork/nintendo-files",
+	"version": "1.0.0",
+	"description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
+	"scripts": {
+		"lint": "npx eslint .",
 	"clean": "npx rimraf ./dist",
-    "build": "npm run lint && npm run clean && npx tsc && npx tsc-alias"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^20.5.0",
-    "@types/node-rsa": "^1.1.1",
-    "@typescript-eslint/eslint-plugin": "^6.4.0",
-    "@typescript-eslint/parser": "^6.4.0",
-    "eslint": "^7.32.0",
-    "rimraf": "^5.0.1",
-    "tsc-alias": "^1.8.7"
-  },
-  "dependencies": {
-    "image-encode": "^1.3.1",
-    "node-rsa": "^1.1.1"
-  },
-  "exports": {
-	".": {
-		"import": "./dist/index.js",
-		"require": "./dist/index.js",
-		"types": "./dist/index.d.ts"
+		"build": "npm run lint && npm run clean && npx tsc && npx tsc-alias"
 	},
-	"./certificate": {
-		"import": "./dist/certificate.js",
-		"require": "./dist/certificate.js",
-		"types": "./dist/certificate.d.ts"
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^20.5.0",
+		"@types/node-rsa": "^1.1.1",
+		"@typescript-eslint/eslint-plugin": "^6.4.0",
+		"@typescript-eslint/parser": "^6.4.0",
+		"eslint": "^7.32.0",
+		"rimraf": "^5.0.1",
+		"tsc-alias": "^1.8.7"
 	},
-	"./cia": {
-		"import": "./dist/cia.js",
-		"require": "./dist/cia.js",
-		"types": "./dist/cia.d.ts"
+	"dependencies": {
+		"image-encode": "^1.3.1",
+		"node-rsa": "^1.1.1"
 	},
-	"./smdh": {
-		"import": "./dist/smdh.js",
-		"require": "./dist/smdh.js",
-		"types": "./dist/smdh.d.ts"
-	},
-	"./ticket": {
-		"import": "./dist/ticket.js",
-		"require": "./dist/ticket.js",
-		"types": "./dist/ticket.d.ts"
-	},
-	"./tmd": {
-		"import": "./dist/tmd.js",
-		"require": "./dist/tmd.js",
-		"types": "./dist/tmd.d.ts"
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./certificate": {
+			"import": "./dist/certificate.js",
+			"require": "./dist/certificate.js",
+			"types": "./dist/certificate.d.ts"
+		},
+		"./cia": {
+			"import": "./dist/cia.js",
+			"require": "./dist/cia.js",
+			"types": "./dist/cia.d.ts"
+		},
+		"./smdh": {
+			"import": "./dist/smdh.js",
+			"require": "./dist/smdh.js",
+			"types": "./dist/smdh.d.ts"
+		},
+		"./ticket": {
+			"import": "./dist/ticket.js",
+			"require": "./dist/ticket.js",
+			"types": "./dist/ticket.d.ts"
+		},
+		"./tmd": {
+			"import": "./dist/tmd.js",
+			"require": "./dist/tmd.js",
+			"types": "./dist/tmd.d.ts"
+		}
 	}
-},
 }
