@@ -1,9 +1,9 @@
-# ctr-tools
-### TypeScript library for interacting with several Nintendo 3DS file types. Mainly used to process CIA files for the Pretendo eShop
+# Nintendo File Formats
+### TypeScript library for interacting with several Nintendo file formats across various consoles.
 
 ## Installation
 ```
-npm i @pretendonetwork/ctr-tools
+npm i @pretendonetwork/nintendo-files
 ```
 
 ## Supported files
@@ -16,7 +16,7 @@ npm i @pretendonetwork/ctr-tools
 ## Example
 ```ts
 import fs from 'node:fs';
-import { CIA } from '@pretendonetwork/ctr-tools/cia';
+import { CIA } from '@pretendonetwork/nintendo-files/cia';
 
 const cia = new CIA(`${__dirname}/nimbus.cia`);
 
