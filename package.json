@@ -1,7 +1,7 @@
 {
   "name": "@pretendonetwork/nintendo-files",
   "version": "1.0.1",
-  "description": "TypeScript library for interacting with several Nintendo 3DS file types",
+  "description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
   "scripts": {
     "lint": "npx eslint .",
 	"clean": "npx rimraf ./dist",
