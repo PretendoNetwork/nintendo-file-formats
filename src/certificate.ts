@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import NodeRSA from 'node-rsa';
-import { FileStream } from '@/file-stream';
+import FileStream from '@/file-stream';
 import { getSignatureSize } from '@/signatures';
 
 const KeyTypes = {
@@ -14,7 +14,7 @@ export interface SignedData {
 	signatureBody: Buffer;
 }
 
-export class Certificate {
+export default class Certificate {
 	private stream: FileStream;
 	public signatureType: number;
 	public signature: Buffer;

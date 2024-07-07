@@ -1,5 +1,5 @@
 import encode from 'image-encode';
-import { FileStream } from '@/file-stream';
+import FileStream from '@/file-stream';
 
 const TILE_ORDER = [
 	0, 1, 8, 9, 2, 3, 10, 11, 16, 17, 24, 25, 18, 19, 26, 27, 4, 5, 12, 13, 6, 7,
@@ -41,7 +41,7 @@ interface IconConversionResult {
 	height: number;
 }
 
-export class SMDH {
+export default class SMDH {
 	private stream: FileStream;
 	// * Not storing the magic, not needed
 	public version: number;

@@ -1,8 +1,8 @@
-import { Stream } from '@/stream';
-import { Certificate } from '@/certificate';
+import Stream from '@/stream';
+import Certificate from '@/certificate';
 import { getSignatureSize } from '@/signatures';
 
-export class Ticket {
+export default class Ticket {
 	private stream: Stream;
 	public signatureType: number;
 	public signature: Buffer;

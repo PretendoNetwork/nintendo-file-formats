@@ -37,7 +37,7 @@ npm i @pretendonetwork/nintendo-files
 ## Example
 ```ts
 import fs from 'node:fs';
-import { CIA } from '@pretendonetwork/nintendo-files/cia';
+import CIA from '@pretendonetwork/nintendo-files/cia';
 
 const cia = new CIA(`${__dirname}/nimbus.cia`);
 

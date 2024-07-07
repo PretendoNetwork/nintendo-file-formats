@@ -1,5 +1,5 @@
-import { Stream } from '@/stream';
-import { Certificate } from '@/certificate';
+import Stream from '@/stream';
+import Certificate from '@/certificate';
 import { getSignatureSize } from '@/signatures';
 
 export interface ContentInfoRecord {
@@ -16,7 +16,7 @@ export interface ContentChunkRecord {
 	hash: Buffer;
 }
 
-export class TMD {
+export default class TMD {
 	private stream: Stream;
 	public signatureType: number;
 	public signature: Buffer;

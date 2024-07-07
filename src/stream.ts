@@ -1,4 +1,4 @@
-export class Stream {
+export default class Stream {
 	protected buffer: Buffer;
 	protected offset = 0;
 
