@@ -29,6 +29,16 @@
 			"require": "./dist/index.js",
 			"types": "./dist/index.d.ts"
 		},
+		"./byaml": {
+			"import": "./dist/byaml.js",
+			"require": "./dist/byaml.js",
+			"types": "./dist/byaml.d.ts"
+		},
+		"./byml": {
+			"import": "./dist/byaml.js",
+			"require": "./dist/byaml.js",
+			"types": "./dist/byaml.d.ts"
+		},
 		"./certificate": {
 			"import": "./dist/certificate.js",
 			"require": "./dist/certificate.js",
@@ -38,6 +48,11 @@
 			"import": "./dist/cia.js",
 			"require": "./dist/cia.js",
 			"types": "./dist/cia.d.ts"
+		},
+		"./msbt": {
+			"import": "./dist/msbt.js",
+			"require": "./dist/msbt.js",
+			"types": "./dist/msbt.d.ts"
 		},
 		"./smdh": {
 			"import": "./dist/smdh.js",
