@@ -129,7 +129,7 @@ export default class TMD {
 	 *
 	 * Optional. Only seen if version is <= 1
 	 */
-	public contentInfoRecordsHash: Buffer;
+	public contentInfoRecordsHash?: Buffer;
 
 	/**
 	 * List of content info records.
@@ -138,7 +138,7 @@ export default class TMD {
 	 *
 	 * Optional. Only seen if version is <= 1
 	 */
-	public contentInfoRecords: ContentInfoRecord[];
+	public contentInfoRecords?: ContentInfoRecord[];
 
 	/**
 	 * List of content records
@@ -150,14 +150,14 @@ export default class TMD {
 	 *
 	 * Optional. Only seen if TMD came from the CDN
 	 */
-	public selfCertificate: Certificate;
+	public selfCertificate?: Certificate;
 
 	/**
 	 * Certificate used to verify the `selfCertificate` signature
 	 *
 	 * Optional.  Only seen if TMD came from the CDN
 	 */
-	public CACertificate: Certificate;
+	public CACertificate?: Certificate;
 
 	/**
 	 * The data used to create the TMD signature
@@ -260,7 +260,7 @@ export default class TMD {
 		// * The offset can differ here, time to store it
 		let offset = dataOffset + 0xA4;
 
-		if (this.version === 1) {
+		if (this.version === 1 && this.contentInfoRecordsHash && this.contentInfoRecords) {
 			this.contentInfoRecordsHash.copy(bytes, offset);
 			offset += 0x20;
 
@@ -397,7 +397,7 @@ export default class TMD {
 		this.signatureBody.writeUInt16BE(this.bootIndex, 0xA0);
 		this.signatureBody.writeUInt16BE(this.minorVersion, 0xA2);
 
-		if (this.version === 1) {
+		if (this.version === 1 && this.contentInfoRecordsHash) {
 			this.contentInfoRecordsHash.copy(this.signatureBody, 0xA4);
 		}
 	}
