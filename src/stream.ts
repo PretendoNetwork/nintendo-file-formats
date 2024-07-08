@@ -3,8 +3,13 @@ export default class Stream {
 	protected offset = 0;
 	public bom = 'le';
 
-	constructor(buffer: Buffer) {
-		this.buffer = buffer;
+	constructor(bufferOrStream: Buffer | Stream) {
+		// TODO - This is a hack to support FileStream in the MSBT parser
+		if (bufferOrStream instanceof Buffer) {
+			this.buffer = bufferOrStream;
+		} else {
+			this.buffer = bufferOrStream.buffer;
+		}
 	}
 
 	public remaining(): number {

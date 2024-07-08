@@ -5,15 +5,15 @@ export default class FileStream extends Stream {
 	private fd?: number;
 	private fileSize?: number;
 
-	constructor(fdOrPathOrBuffer: number | string | Buffer) {
-		if (typeof fdOrPathOrBuffer === 'number') {
+	constructor(fdOrPathOrBufferOrStream: number | string | Buffer | Stream) {
+		if (typeof fdOrPathOrBufferOrStream === 'number') {
 			super(Buffer.alloc(0));
-			this.fd = fdOrPathOrBuffer;
-		} else if (typeof fdOrPathOrBuffer === 'string') {
+			this.fd = fdOrPathOrBufferOrStream;
+		} else if (typeof fdOrPathOrBufferOrStream === 'string') {
 			super(Buffer.alloc(0));
-			this.fd = fs.openSync(fdOrPathOrBuffer, 'r');
+			this.fd = fs.openSync(fdOrPathOrBufferOrStream, 'r');
 		} else {
-			super(fdOrPathOrBuffer);
+			super(fdOrPathOrBufferOrStream);
 		}
 
 		if (this.fd) {
@@ -43,5 +43,16 @@ export default class FileStream extends Stream {
 		this.offset += length;
 
 		return read;
+	}
+
+	public consumeAll(): void {
+		if (this.fd && this.fileSize) {
+			this.buffer = Buffer.alloc(this.fileSize);
+
+			fs.readSync(this.fd, this.buffer, 0, this.fileSize, 0);
+			fs.closeSync(this.fd);
+
+			this.fd = undefined;
+		}
 	}
 }

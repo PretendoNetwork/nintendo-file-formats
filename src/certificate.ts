@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import NodeRSA from 'node-rsa';
 import FileStream from '@/file-stream';
 import { getSignatureSize } from '@/signatures';
+import type Stream from '@/stream';
 
 const KeyTypes = {
 	RSA_4096: 0x0,
@@ -25,7 +26,7 @@ export default class Certificate {
 	public publicKeyData: Buffer;
 	public signatureBody: Buffer; // * Used to verify the signature
 
-	constructor(fdOrCertificateOrStream: number | string | Buffer | FileStream) {
+	constructor(fdOrCertificateOrStream: number | string | Buffer | Stream) {
 		if (typeof fdOrCertificateOrStream === 'string') {
 			this.stream = new FileStream(Buffer.from(fdOrCertificateOrStream, 'base64'));
 		} else if (fdOrCertificateOrStream instanceof FileStream) {

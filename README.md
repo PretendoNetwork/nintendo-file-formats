@@ -15,7 +15,12 @@ npm i @pretendonetwork/nintendo-files
 - [ ] Encrypted title parts (`.app` files)
 - [ ] Title hashes (`.h3` files)
 - [ ] Mii data
-- [ ] MSBT
+- [x] MSBT. Parses:
+  - [x] LBL1
+  - [x] ATR1
+  - [x] TXT2
+  - [x] NLI1
+  - [ ] TSY1
 - [ ] BYML/BYAML
 - [ ] SARC
 - [ ] SZS (Yaz0)
