@@ -1,6 +1,6 @@
 {
 	"name": "@pretendonetwork/nintendo-files",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
 	"scripts": {
 		"lint": "npx eslint .",
@@ -23,6 +23,9 @@
 		"image-encode": "^1.3.1",
 		"node-rsa": "^1.1.1"
 	},
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
 			"import": "./dist/index.js",
