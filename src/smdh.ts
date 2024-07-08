@@ -94,16 +94,99 @@ export default class SMDH {
 	 */
 	public iconLarge: Buffer;
 
-	constructor(fdOrCertificateOrStream: number | string | Buffer | FileStream) {
-		if (typeof fdOrCertificateOrStream === 'string') {
-			this.stream = new FileStream(Buffer.from(fdOrCertificateOrStream, 'base64'));
-		} else if (fdOrCertificateOrStream instanceof FileStream) {
-			this.stream = fdOrCertificateOrStream;
-		} else {
-			this.stream = new FileStream(fdOrCertificateOrStream);
-		}
-
+	/**
+	 * Parses the SMDH from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public parseFromFile(fdOrPath: number | string): void {
+		this.stream = new FileStream(fdOrPath);
 		this.parse();
+	}
+
+	/**
+	 * Parses the SMDH from the provided `buffer`
+	 *
+	 * @param buffer - SMDH data buffer
+	 */
+	public parseFromBuffer(buffer: Buffer): void {
+		this.stream = new FileStream(buffer);
+		this.parse();
+	}
+
+	/**
+	 * Parses the SMDH from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded SMDH data
+	 */
+	public parseFromString(base64: string): void {
+		this.parseFromBuffer(Buffer.from(base64, 'base64'));
+	}
+
+	/**
+	 * Parses the SMDH from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public parseFromFileStream(stream: FileStream): void {
+		this.stream = stream;
+		this.parse();
+	}
+
+	/**
+	 * Creates a new instance of `SMDH` and
+	 * parses the SMDH from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public static fromFile(fdOrPath: number | string): SMDH {
+		const smdh = new SMDH();
+		smdh.parseFromFile(fdOrPath);
+
+		return smdh;
+	}
+
+	/**
+	 * Creates a new instance of `SMDH` and
+	 * parses the SMDH from the provided `buffer`
+	 *
+	 * @param buffer - SMDH data buffer
+	 */
+	public static fromBuffer(buffer: Buffer): SMDH {
+		const smdh = new SMDH();
+		smdh.parseFromBuffer(buffer);
+
+		return smdh;
+	}
+
+	/**
+	 * Creates a new instance of `SMDH` and
+	 * parses the SMDH from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded SMDH data
+	 */
+	public static fromString(base64: string): SMDH {
+		const smdh = new SMDH();
+		smdh.parseFromString(base64);
+
+		return smdh;
+	}
+
+	/**
+	 * Creates a new instance of `SMDH` and
+	 * parses the SMDH from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public static fromFileStream(stream: FileStream): SMDH {
+		const smdh = new SMDH();
+		smdh.parseFromFileStream(stream);
+
+		return smdh;
 	}
 
 	private parse(): void {

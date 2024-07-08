@@ -34,24 +34,107 @@ export default class MSBT {
 	 */
 	public nodeLabels: number[] = [];
 
-	constructor(fdOrPathOrStream: number | string | Buffer | FileStream) {
-		if (fdOrPathOrStream instanceof FileStream) {
-			this.stream = fdOrPathOrStream;
-		} else {
-			this.stream = new FileStream(fdOrPathOrStream);
-		}
-
-		// TODO - Refactor this to not need to jump around?
-		this.stream.consumeAll(); // * Read the whole file into memory since we need to jump around
-
+	/**
+	 * Parses the MSBT from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public parseFromFile(fdOrPath: number | string): void {
+		this.stream = new FileStream(fdOrPath);
 		this.parse();
+	}
+
+	/**
+	 * Parses the MSBT from the provided `buffer`
+	 *
+	 * @param buffer - MSBT data buffer
+	 */
+	public parseFromBuffer(buffer: Buffer): void {
+		this.stream = new FileStream(buffer);
+		this.parse();
+	}
+
+	/**
+	 * Parses the MSBT from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded MSBT data
+	 */
+	public parseFromString(base64: string): void {
+		this.parseFromBuffer(Buffer.from(base64, 'base64'));
+	}
+
+	/**
+	 * Parses the MSBT from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public parseFromFileStream(stream: FileStream): void {
+		this.stream = stream;
+		this.parse();
+	}
+
+	/**
+	 * Creates a new instance of `MSBT` and
+	 * parses the MSBT from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public static fromFile(fdOrPath: number | string): MSBT {
+		const msbt = new MSBT();
+		msbt.parseFromFile(fdOrPath);
+
+		return msbt;
+	}
+
+	/**
+	 * Creates a new instance of `MSBT` and
+	 * parses the MSBT from the provided `buffer`
+	 *
+	 * @param buffer - MSBT data buffer
+	 */
+	public static fromBuffer(buffer: Buffer): MSBT {
+		const msbt = new MSBT();
+		msbt.parseFromBuffer(buffer);
+
+		return msbt;
+	}
+
+	/**
+	 * Creates a new instance of `MSBT` and
+	 * parses the MSBT from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded MSBT data
+	 */
+	public static fromString(base64: string): MSBT {
+		const msbt = new MSBT();
+		msbt.parseFromString(base64);
+
+		return msbt;
+	}
+
+	/**
+	 * Creates a new instance of `MSBT` and
+	 * parses the MSBT from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public static fromFileStream(stream: FileStream): MSBT {
+		const msbt = new MSBT();
+		msbt.parseFromFileStream(stream);
+
+		return msbt;
 	}
 
 	/**
 	 * Parses the MSBT from the input source provided at instantiation
 	 */
 	public parse(): void {
-		console.log(this.stream);
+		// TODO - Refactor this to not need to jump around?
+		this.stream.consumeAll(); // * Read the whole file into memory since we need to jump around
 
 		const magic = this.stream.readBytes(0x8);
 

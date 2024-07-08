@@ -101,10 +101,99 @@ export default class CIA {
 	 */
 	public meta?: CIAMeta;
 
-	constructor(pathOrBuffer: string | Buffer) {
-		this.stream = new FileStream(pathOrBuffer);
-
+	/**
+	 * Parses the CIA from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public parseFromFile(fdOrPath: number | string): void {
+		this.stream = new FileStream(fdOrPath);
 		this.parse();
+	}
+
+	/**
+	 * Parses the CIA from the provided `buffer`
+	 *
+	 * @param buffer - CIA data buffer
+	 */
+	public parseFromBuffer(buffer: Buffer): void {
+		this.stream = new FileStream(buffer);
+		this.parse();
+	}
+
+	/**
+	 * Parses the CIA from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded CIA data
+	 */
+	public parseFromString(base64: string): void {
+		this.parseFromBuffer(Buffer.from(base64, 'base64'));
+	}
+
+	/**
+	 * Parses the CIA from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public parseFromFileStream(stream: FileStream): void {
+		this.stream = stream;
+		this.parse();
+	}
+
+	/**
+	 * Creates a new instance of `CIA` and
+	 * parses the CIA from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public static fromFile(fdOrPath: number | string): CIA {
+		const cia = new CIA();
+		cia.parseFromFile(fdOrPath);
+
+		return cia;
+	}
+
+	/**
+	 * Creates a new instance of `CIA` and
+	 * parses the CIA from the provided `buffer`
+	 *
+	 * @param buffer - CIA data buffer
+	 */
+	public static fromBuffer(buffer: Buffer): CIA {
+		const cia = new CIA();
+		cia.parseFromBuffer(buffer);
+
+		return cia;
+	}
+
+	/**
+	 * Creates a new instance of `CIA` and
+	 * parses the CIA from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded CIA data
+	 */
+	public static fromString(base64: string): CIA {
+		const cia = new CIA();
+		cia.parseFromString(base64);
+
+		return cia;
+	}
+
+	/**
+	 * Creates a new instance of `CIA` and
+	 * parses the CIA from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public static fromFileStream(stream: FileStream): CIA {
+		const cia = new CIA();
+		cia.parseFromFileStream(stream);
+
+		return cia;
 	}
 
 	private parse(): void {
@@ -130,17 +219,17 @@ export default class CIA {
 		this.contentIndex = this.stream.readBytes(0x2000);
 		this.stream.alignBlock(BLOCK_SIZE);
 
-		this.CACertificate = new Certificate(this.stream);
-		this.ticketCertificate = new Certificate(this.stream);
-		this.TMDCertificate = new Certificate(this.stream);
+		this.CACertificate = Certificate.fromFileStream(this.stream);
+		this.ticketCertificate = Certificate.fromFileStream(this.stream);
+		this.TMDCertificate = Certificate.fromFileStream(this.stream);
 		this.stream.alignBlock(BLOCK_SIZE);
 
 		// TODO - Use the above certificates to validate the below signatures. It always fails right now?
 
-		this.ticket = new Ticket(this.stream.readBytes(this.ticketSize));
+		this.ticket = Ticket.fromBuffer(this.stream.readBytes(this.ticketSize));
 		this.stream.alignBlock(BLOCK_SIZE);
 
-		this.TMD = new TMD(this.stream.readBytes(this.TMDSize));
+		this.TMD = TMD.fromBuffer(this.stream.readBytes(this.TMDSize));
 		this.stream.alignBlock(BLOCK_SIZE);
 
 		this.encryptedContents = this.stream.readBytes(Number(this.contentSize));
@@ -159,7 +248,7 @@ export default class CIA {
 				reserved1: this.stream.readBytes(0x180),
 				coreVersion: this.stream.readUInt32LE(),
 				reserved2: this.stream.readBytes(0xFC),
-				iconData: new SMDH(this.stream),
+				iconData: SMDH.fromFileStream(this.stream),
 			};
 		}
 	}

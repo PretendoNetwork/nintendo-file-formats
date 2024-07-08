@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import NodeRSA from 'node-rsa';
 import FileStream from '@/file-stream';
 import { getSignatureSize } from '@/signatures';
-import type Stream from '@/stream';
 
 const KeyTypes = {
 	RSA_4096: 0x0,
@@ -17,7 +16,6 @@ export interface SignedData {
 
 export default class Certificate {
 	private stream: FileStream;
-
 
 	/**
 	 * The type of signature used to sign the certificate
@@ -59,16 +57,100 @@ export default class Certificate {
 	 */
 	public signatureBody: Buffer; // * Used to verify the signature
 
-	constructor(fdOrCertificateOrStream: number | string | Buffer | Stream) {
-		if (typeof fdOrCertificateOrStream === 'string') {
-			this.stream = new FileStream(Buffer.from(fdOrCertificateOrStream, 'base64'));
-		} else if (fdOrCertificateOrStream instanceof FileStream) {
-			this.stream = fdOrCertificateOrStream;
-		} else {
-			this.stream = new FileStream(fdOrCertificateOrStream);
-		}
 
+	/**
+	 * Parses the certificate from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public parseFromFile(fdOrPath: number | string): void {
+		this.stream = new FileStream(fdOrPath);
 		this.parse();
+	}
+
+	/**
+	 * Parses the certificate from the provided `buffer`
+	 *
+	 * @param buffer - Certificate data buffer
+	 */
+	public parseFromBuffer(buffer: Buffer): void {
+		this.stream = new FileStream(buffer);
+		this.parse();
+	}
+
+	/**
+	 * Parses the certificate from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded certificate data
+	 */
+	public parseFromString(base64: string): void {
+		this.parseFromBuffer(Buffer.from(base64, 'base64'));
+	}
+
+	/**
+	 * Parses the certificate from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public parseFromFileStream(stream: FileStream): void {
+		this.stream = stream;
+		this.parse();
+	}
+
+	/**
+	 * Creates a new instance of `Certificate` and
+	 * parses the certificate from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public static fromFile(fdOrPath: number | string): Certificate {
+		const certificate = new Certificate();
+		certificate.parseFromFile(fdOrPath);
+
+		return certificate;
+	}
+
+	/**
+	 * Creates a new instance of `Certificate` and
+	 * parses the certificate from the provided `buffer`
+	 *
+	 * @param buffer - Certificate data buffer
+	 */
+	public static fromBuffer(buffer: Buffer): Certificate {
+		const certificate = new Certificate();
+		certificate.parseFromBuffer(buffer);
+
+		return certificate;
+	}
+
+	/**
+	 * Creates a new instance of `Certificate` and
+	 * parses the certificate from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded certificate data
+	 */
+	public static fromString(base64: string): Certificate {
+		const certificate = new Certificate();
+		certificate.parseFromString(base64);
+
+		return certificate;
+	}
+
+	/**
+	 * Creates a new instance of `Certificate` and
+	 * parses the certificate from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public static fromFileStream(stream: FileStream): Certificate {
+		const certificate = new Certificate();
+		certificate.parseFromFileStream(stream);
+
+		return certificate;
 	}
 
 	/**

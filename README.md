@@ -44,7 +44,7 @@ npm i @pretendonetwork/nintendo-files
 import fs from 'node:fs';
 import CIA from '@pretendonetwork/nintendo-files/cia';
 
-const cia = new CIA(`${__dirname}/nimbus.cia`);
+const cia = CIA.fromFile(`${__dirname}/nimbus.cia`);
 
 console.log(cia.CACertificate.verifySignature(cia.TMDCertificate)); // true. Certificates are signed by Nintendo, and should always pass
 console.log(cia.CACertificate.verifySignature(cia.ticketCertificate)); // true. Certificates are signed by Nintendo, and should always pass

@@ -1,9 +1,9 @@
-import Stream from '@/stream';
+import FileStream from '@/file-stream';
 import Certificate from '@/certificate';
 import { getSignatureSize } from '@/signatures';
 
 export default class Ticket {
-	private stream: Stream;
+	private stream: FileStream;
 
 	/**
 	 * The type of signature the data is signed with
@@ -144,16 +144,99 @@ export default class Ticket {
 	 */
 	public signatureBody: Buffer;
 
-	constructor(ticketOrStream: string | Buffer | Stream) {
-		if (ticketOrStream instanceof Stream) {
-			this.stream = ticketOrStream;
-		} else if (typeof ticketOrStream === 'string') {
-			this.stream = new Stream(Buffer.from(ticketOrStream, 'base64'));
-		} else {
-			this.stream = new Stream(ticketOrStream);
-		}
-
+	/**
+	 * Parses the ticket from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public parseFromFile(fdOrPath: number | string): void {
+		this.stream = new FileStream(fdOrPath);
 		this.parse();
+	}
+
+	/**
+	 * Parses the ticket from the provided `buffer`
+	 *
+	 * @param buffer - Ticket data buffer
+	 */
+	public parseFromBuffer(buffer: Buffer): void {
+		this.stream = new FileStream(buffer);
+		this.parse();
+	}
+
+	/**
+	 * Parses the ticket from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded ticket data
+	 */
+	public parseFromString(base64: string): void {
+		this.parseFromBuffer(Buffer.from(base64, 'base64'));
+	}
+
+	/**
+	 * Parses the ticket from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public parseFromFileStream(stream: FileStream): void {
+		this.stream = stream;
+		this.parse();
+	}
+
+	/**
+	 * Creates a new instance of `Ticket` and
+	 * parses the ticket from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public static fromFile(fdOrPath: number | string): Ticket {
+		const ticket = new Ticket();
+		ticket.parseFromFile(fdOrPath);
+
+		return ticket;
+	}
+
+	/**
+	 * Creates a new instance of `Ticket` and
+	 * parses the ticket from the provided `buffer`
+	 *
+	 * @param buffer - Ticket data buffer
+	 */
+	public static fromBuffer(buffer: Buffer): Ticket {
+		const ticket = new Ticket();
+		ticket.parseFromBuffer(buffer);
+
+		return ticket;
+	}
+
+	/**
+	 * Creates a new instance of `Ticket` and
+	 * parses the ticket from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded ticket data
+	 */
+	public static fromString(base64: string): Ticket {
+		const ticket = new Ticket();
+		ticket.parseFromString(base64);
+
+		return ticket;
+	}
+
+	/**
+	 * Creates a new instance of `Ticket` and
+	 * parses the ticket from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public static fromFileStream(stream: FileStream): Ticket {
+		const ticket = new Ticket();
+		ticket.parseFromFileStream(stream);
+
+		return ticket;
 	}
 
 	/**
@@ -286,8 +369,8 @@ export default class Ticket {
 		this.contentIndex = this.stream.readBytes(contentIndexSize);
 
 		if (this.stream.remaining() !== 0) {
-			this.selfCertificate = new Certificate(this.stream);
-			this.CACertificate = new Certificate(this.stream);
+			this.selfCertificate = Certificate.fromFileStream(this.stream);
+			this.CACertificate = Certificate.fromFileStream(this.stream);
 		}
 
 		this.constructSignatureData();

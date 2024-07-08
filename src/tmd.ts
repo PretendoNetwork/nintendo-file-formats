@@ -1,4 +1,4 @@
-import Stream from '@/stream';
+import FileStream from '@/file-stream';
 import Certificate from '@/certificate';
 import { getSignatureSize } from '@/signatures';
 
@@ -17,7 +17,7 @@ export interface ContentChunkRecord {
 }
 
 export default class TMD {
-	private stream: Stream;
+	private stream: FileStream;
 
 	/**
 	 * The type of signature the data is signed with
@@ -164,16 +164,99 @@ export default class TMD {
 	 */
 	public signatureBody: Buffer;
 
-	constructor(tmdOrStream: string | Buffer | Stream) {
-		if (tmdOrStream instanceof Stream) {
-			this.stream = tmdOrStream;
-		} else if (typeof tmdOrStream === 'string') {
-			this.stream = new Stream(Buffer.from(tmdOrStream, 'base64'));
-		} else {
-			this.stream = new Stream(tmdOrStream);
-		}
-
+	/**
+	 * Parses the TMD from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public parseFromFile(fdOrPath: number | string): void {
+		this.stream = new FileStream(fdOrPath);
 		this.parse();
+	}
+
+	/**
+	 * Parses the TMD from the provided `buffer`
+	 *
+	 * @param buffer - TMD data buffer
+	 */
+	public parseFromBuffer(buffer: Buffer): void {
+		this.stream = new FileStream(buffer);
+		this.parse();
+	}
+
+	/**
+	 * Parses the TMD from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded TMD data
+	 */
+	public parseFromString(base64: string): void {
+		this.parseFromBuffer(Buffer.from(base64, 'base64'));
+	}
+
+	/**
+	 * Parses the TMD from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public parseFromFileStream(stream: FileStream): void {
+		this.stream = stream;
+		this.parse();
+	}
+
+	/**
+	 * Creates a new instance of `TMD` and
+	 * parses the TMD from the provided `fdOrPath`
+	 *
+	 * @param fdOrPath - Either an open `fd` or a path to a file on disk
+	 */
+	public static fromFile(fdOrPath: number | string): TMD {
+		const tmd = new TMD();
+		tmd.parseFromFile(fdOrPath);
+
+		return tmd;
+	}
+
+	/**
+	 * Creates a new instance of `TMD` and
+	 * parses the TMD from the provided `buffer`
+	 *
+	 * @param buffer - TMD data buffer
+	 */
+	public static fromBuffer(buffer: Buffer): TMD {
+		const tmd = new TMD();
+		tmd.parseFromBuffer(buffer);
+
+		return tmd;
+	}
+
+	/**
+	 * Creates a new instance of `TMD` and
+	 * parses the TMD from the provided string
+	 *
+	 * Calls `parseFromBuffer` internally
+	 *
+	 * @param base64 - Base64 encoded TMD data
+	 */
+	public static fromString(base64: string): TMD {
+		const tmd = new TMD();
+		tmd.parseFromString(base64);
+
+		return tmd;
+	}
+
+	/**
+	 * Creates a new instance of `TMD` and
+	 * parses the TMD from an existing file stream
+	 *
+	 * @param stream - An existing file stream
+	 */
+	public static fromFileStream(stream: FileStream): TMD {
+		const tmd = new TMD();
+		tmd.parseFromFileStream(stream);
+
+		return tmd;
 	}
 
 	/**
@@ -352,8 +435,8 @@ export default class TMD {
 		}
 
 		if (this.stream.remaining() !== 0) {
-			this.selfCertificate = new Certificate(this.stream);
-			this.CACertificate = new Certificate(this.stream);
+			this.selfCertificate = Certificate.fromFileStream(this.stream);
+			this.CACertificate = Certificate.fromFileStream(this.stream);
 		}
 
 		this.constructSignatureData();
