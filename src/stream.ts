@@ -9,7 +9,7 @@ export default class Stream {
 	 *
 	 * Either "le" (little endian) or "be" (big endian)
 	 */
-	public bom = 'le';
+	public bom: 'le' | 'be' = 'le';
 
 	constructor(bufferOrStream: Buffer | Stream) {
 		// TODO - This is a hack to support FileStream in the MSBT parser
