@@ -9,10 +9,29 @@ export default class MSBT {
 	private stream: FileStream;
 	private sectionsCount: number;
 
+	/**
+	 * Unknown
+	 */
 	public labels: { label: string; id: number; }[] = [];
+
+	/**
+	 * Text messages
+	 */
 	public messages: string[] = [];
+
+	/**
+	 * Text attributes
+	 */
 	public attributes: Buffer[] = [];
+
+	/**
+	 * Text styles
+	 */
 	public textStyles: string[] = [];
+
+	/**
+	 * Unknown
+	 */
 	public nodeLabels: number[] = [];
 
 	constructor(fdOrPathOrStream: number | string | Buffer | FileStream) {
@@ -28,6 +47,9 @@ export default class MSBT {
 		this.parse();
 	}
 
+	/**
+	 * Parses the MSBT from the input source provided at instantiation
+	 */
 	public parse(): void {
 		console.log(this.stream);
 

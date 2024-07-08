@@ -37,6 +37,15 @@ export interface SignatureSize {
 	TOTAL: number;
 }
 
+/**
+ * Gets the size of a signature section for a given signature type
+ *
+ * Many file formats contain signatures with padding.
+ * This is used to know how much data the signature uses
+ *
+ * @param signatureType - The type of signature being checked
+ * @returns the signature size data
+ */
 export function getSignatureSize(signatureType: number): SignatureSize {
 	switch (signatureType) {
 		case 0x10000:

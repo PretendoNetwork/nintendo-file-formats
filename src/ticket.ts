@@ -4,33 +4,145 @@ import { getSignatureSize } from '@/signatures';
 
 export default class Ticket {
 	private stream: Stream;
+
+	/**
+	 * The type of signature the data is signed with
+	 */
 	public signatureType: number;
+
+	/**
+	 * The signature data
+	 */
 	public signature: Buffer;
+
+	/**
+	 * The name of the issuer
+	 */
 	public issuer: string;
+
+	/**
+	 * Public ECC key data
+	 */
 	public publicECCKey: Buffer;
+
+	/**
+	 * Ticket version
+	 */
 	public version: number;
+
+	/**
+	 * Version of the certificate used to verify the `selfCertificate` signature?
+	 */
 	public caVersion: number;
+
+	/**
+	 * `selfCertificate` certificate version?
+	 */
 	public signerVersion: number;
+
+	/**
+	 * Title installation key, encrypted
+	 */
 	public encryptedTitleKey: Buffer;
-	public reserved1: number;
+
+	/**
+	 * Unused
+	 */
+	public reserved1: number; // * 1 byte
+
+	/**
+	 * Unique ticket ID
+	 */
 	public ticketID: bigint;
+
+	/**
+	 * ID of the console the ticket is assigned to
+	 */
 	public consoleID: number;
+
+	/**
+	 * Title ID of the title the ticket is for
+	 */
 	public titleID: bigint;
-	public reserved2: number;
+
+	/**
+	 * Unused
+	 */
+	public reserved2: number; // * 2 bytes
+
+	/**
+	 * Version of the title the ticket is for
+	 */
 	public titleVersion: number;
+
+	/**
+	 * Unused
+	 */
 	public reserved3: bigint;
+
+	/**
+	 * Unknown use
+	 */
 	public licenseType: number;
+
+	/**
+	 * Index to the common keyY for the ticket (3DS). Unknown on Wii U
+	 */
 	public commonKeyYIndex: number;
+
+	/**
+	 * Unused
+	 */
 	public reserved4: Buffer; // * 0x2A reserved bytes
+
+	/**
+	 * ID of the SOAP account the ticket is assigned to
+	 */
 	public eShopAccountID: number;
+
+	/**
+	 * Unused
+	 */
 	public reserved5: number;
+
+	/**
+	 * Unknown
+	 */
 	public audit: number; // * What is this?
+
+	/**
+	 * Unused
+	 */
 	public reserved6: Buffer; // * 0x42 reserved bytes
+
+	/**
+	 * Unknown
+	 */
 	public limits: Buffer; // * What is this?
+
+	/**
+	 * Unknown
+	 */
 	public contentIndex: Buffer; // * Is this the same data in the TMD?
-	public selfCertificate?: Certificate; // * Only seen if ticket came from the CDN. Verifies the ticket signature
-	public CACertificate?: Certificate; // * Only seen if ticket came from the CDN. Verifies the ticketCertificate signature
-	public signatureBody: Buffer; // * Used to verify the signature
+
+	/**
+	 * Certificate used to verify the ticket signature
+	 *
+	 * Optional. Only seen if ticket came from the CDN
+	 */
+	public selfCertificate?: Certificate;
+
+	/**
+	 * Certificate used to verify the `selfCertificate` signature
+	 *
+	 * Optional.  Only seen if ticket came from the CDN
+	 */
+	public CACertificate?: Certificate;
+
+	/**
+	 * The data used to create the ticket signature
+	 */
+	public signatureBody: Buffer;
 
 	constructor(ticketOrStream: string | Buffer | Stream) {
 		if (ticketOrStream instanceof Stream) {
@@ -44,6 +156,11 @@ export default class Ticket {
 		this.parse();
 	}
 
+	/**
+	 * Gets the size of the Ticket
+	 *
+	 * @returns Ticket size
+	 */
 	public size(): number {
 		let bufferSize = 0;
 
@@ -83,6 +200,11 @@ export default class Ticket {
 		return bufferSize;
 	}
 
+	/**
+	 * Encodes the Ticket data into a Buffer
+	 *
+	 * @returns encoded Ticket
+	 */
 	public bytes(): Buffer {
 		const bytes = Buffer.alloc(this.size());
 

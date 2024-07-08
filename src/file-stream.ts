@@ -22,6 +22,11 @@ export default class FileStream extends Stream {
 		}
 	}
 
+	/**
+	 * Checks how much data has been read
+	 *
+	 * @returns the amount of data in the file that has not been read
+	 */
 	public remaining(): number {
 		if (this.fileSize) {
 			return this.fileSize - this.offset;
@@ -30,6 +35,12 @@ export default class FileStream extends Stream {
 		}
 	}
 
+	/**
+	 * Reads the given amount of data from the file
+	 *
+	 * @param length - The amount of data to read
+	 * @returns the read data
+	 */
 	public read(length: number): Buffer {
 		let read: Buffer;
 
@@ -45,6 +56,11 @@ export default class FileStream extends Stream {
 		return read;
 	}
 
+	/**
+	 * Reads the entire file into memory. This effectively turns FileStream into a Stream
+	 *
+	 * Should not typically be used unless you know the files are safe to read into memory
+	 */
 	public consumeAll(): void {
 		if (this.fd && this.fileSize) {
 			this.buffer = Buffer.alloc(this.fileSize);

@@ -44,12 +44,54 @@ interface IconConversionResult {
 export default class SMDH {
 	private stream: FileStream;
 	// * Not storing the magic, not needed
+
+	/**
+	 * SMDH version
+	 */
 	public version: number;
-	public reserved1: number;
+
+	/**
+	 * Unused
+	 */
+	public reserved1: number; // * 2 bytes
+
+	/**
+	 * List of title information of the title the SMDH is for.
+	 * Each index is a different language:
+	 *
+	 * 0. Japanese
+	 * 1. English
+	 * 2. French
+	 * 3. German
+	 * 4. Italian
+	 * 5. Spanish
+	 * 6. Simplified Chinese
+	 * 7. Korean
+	 * 8. Dutch
+	 * 9. Portuguese
+	 * 10. Russian
+	 * 11. Traditional Chinese
+	 */
 	public applicationTitles: SMDHApplicationTitle[] = [];
+
+	/**
+	 * Settings used by the Home Menu
+	 */
 	public applicationSettings: SMDHApplicationSettings;
+
+	/**
+	 * Unused
+	 */
 	public reserved2: bigint;
+
+	/**
+	 * Raw data for the small (24x24) icon
+	 */
 	public iconSmall: Buffer;
+
+	/**
+	 * Raw data for the large (48x48) icon
+	 */
 	public iconLarge: Buffer;
 
 	constructor(fdOrCertificateOrStream: number | string | Buffer | FileStream) {
@@ -178,6 +220,12 @@ export default class SMDH {
 		};
 	}
 
+	/**
+	 * Exports the SMDH large (48x48) image
+	 *
+	 * @param outputFormat - The image format to output to
+	 * @returns Buffer of image data
+	 */
 	public exportLargeImage(outputFormat: IconExportFormat = 'png'): Buffer {
 		const converted = this.convertTiledImage({
 			inputData: this.iconLarge,
@@ -190,6 +238,12 @@ export default class SMDH {
 		return Buffer.from(encode(converted.data, [converted.width, converted.height], outputFormat));
 	}
 
+	/**
+	 * Exports the SMDH smal (24x24) image
+	 *
+	 * @param outputFormat - The image format to output to
+	 * @returns Buffer of image data
+	 */
 	public exportSmallImage(outputFormat: IconExportFormat = 'png'): Buffer {
 		const converted = this.convertTiledImage({
 			inputData: this.iconSmall,
@@ -202,50 +256,110 @@ export default class SMDH {
 		return Buffer.from(encode(converted.data, [converted.width, converted.height], outputFormat));
 	}
 
+	/**
+	 * Gets the SMDB Japanese title information
+	 *
+	 * @returns the Japanese title information
+	 */
 	public getJapaneseApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[0];
 	}
 
+	/**
+	 * Gets the SMDB English title information
+	 *
+	 * @returns the English title information
+	 */
 	public getEnglishApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[1];
 	}
 
+	/**
+	 * Gets the SMDB French title information
+	 *
+	 * @returns the French title information
+	 */
 	public getFrenchApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[2];
 	}
 
+	/**
+	 * Gets the SMDB German title information
+	 *
+	 * @returns the German title information
+	 */
 	public getGermanApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[3];
 	}
 
+	/**
+	 * Gets the SMDB Italian title information
+	 *
+	 * @returns the Italian title information
+	 */
 	public getItalianApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[4];
 	}
 
+	/**
+	 * Gets the SMDB Spanish title information
+	 *
+	 * @returns the Spanish title information
+	 */
 	public getSpanishApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[5];
 	}
 
+	/**
+	 * Gets the SMDB simplified Chinese title information
+	 *
+	 * @returns the simplified Chinese title information
+	 */
 	public getSimplifiedChineseApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[6];
 	}
 
+	/**
+	 * Gets the SMDB Korean title information
+	 *
+	 * @returns the Korean title information
+	 */
 	public getKoreanApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[7];
 	}
 
+	/**
+	 * Gets the SMDB Dutch title information
+	 *
+	 * @returns the Dutch title information
+	 */
 	public getDutchApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[8];
 	}
 
+	/**
+	 * Gets the SMDB Portuguese title information
+	 *
+	 * @returns the Portuguese title information
+	 */
 	public getPortugueseApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[9];
 	}
 
+	/**
+	 * Gets the SMDB Russian title information
+	 *
+	 * @returns the Russian title information
+	 */
 	public getRussianApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[10];
 	}
 
+	/**
+	 * Gets the SMDB traditional Chinese title information
+	 *
+	 * @returns the traditional Chinese title information
+	 */
 	public getTraditionalChineseApplicationTitle(): SMDHApplicationTitle {
 		return this.applicationTitles[11];
 	}

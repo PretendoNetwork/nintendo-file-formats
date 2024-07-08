@@ -22,20 +22,83 @@ interface CIAMeta {
 export default class CIA {
 	private stream: FileStream;
 	private encryptedContents: Buffer;
+
+
+	/**
+	 * Unknown
+	 */
 	public type: number;
+
+	/**
+	 * CIA version
+	 */
 	public version: number;
+
+	/**
+	 * Size of the certificate chain
+	 */
 	public certificateChainSize: number;
+
+	/**
+	 * Size of the ticket
+	 */
 	public ticketSize: number;
+
+	/**
+	 * Size of the TMD
+	 */
 	public TMDSize: number;
+
+	/**
+	 * Size of the "meta" (metadata) section
+	 */
 	public metaSize: number;
+
+	/**
+	 * Size of the CIA content
+	 */
 	public contentSize: bigint;
+
+	/**
+	 * Unknown
+	 */
 	public contentIndex: Buffer;
-	public CACertificate: Certificate; // * Used to verify the ticket and TMD certificates
-	public ticketCertificate: Certificate; // * Used to verify the ticket signature
-	public TMDCertificate: Certificate; // * Used to verify the TMD signature
+
+	/**
+	 * Certificate used to verify the ticket and TMD certificates signatures
+	 */
+	public CACertificate: Certificate;
+
+	/**
+	 * Certificate used to verify the ticket signature
+	 */
+	public ticketCertificate: Certificate;
+
+	/**
+	 * Certificate used to verify the TMD signature
+	 */
+	public TMDCertificate: Certificate;
+
+	/**
+	 * CIA title installation ticket
+	 */
 	public ticket: Ticket;
+
+	/**
+	 * CIA title installation TMD
+	 */
 	public TMD: TMD;
+
+	/**
+	 * CIA title contents
+	 */
 	public contents: CIAContent[] = [];
+
+	/**
+	 * CIA metadata
+	 *
+	 * Optional
+	 */
 	public meta?: CIAMeta;
 
 	constructor(pathOrBuffer: string | Buffer) {

@@ -18,33 +18,151 @@ export interface ContentChunkRecord {
 
 export default class TMD {
 	private stream: Stream;
+
+	/**
+	 * The type of signature the data is signed with
+	 */
 	public signatureType: number;
+
+	/**
+	 * The signature data
+	 */
 	public signature: Buffer;
+
+	/**
+	 * The name of the issuer
+	 */
 	public issuer: string;
+
+	/**
+	 * TMD version
+	 */
 	public version: number;
+
+	/**
+	 * Version of the certificate used to verify the `selfCertificate` signature?
+	 */
 	public caVersion: number;
+
+	/**
+	 * `selfCertificate` certificate version?
+	 */
 	public signerVersion: number;
-	public reserved1: number;
+
+	/**
+	 * Unused
+	 */
+	public reserved1: number; // * 1 byte
+
+	/**
+	 * Minimum system version?
+	 */
 	public systemVersion: bigint;
+
+	/**
+	 * Title ID of the title the TMD is for
+	 */
 	public titleID: bigint;
+
+	/**
+	 * Type of the title the TMD is for
+	 */
 	public titleType: number;
+
+	/**
+	 * Unknown
+	 */
 	public groupID: number;
+
+	/**
+	 * Unknown
+	 */
 	public saveDataSize: number;
+
+	/**
+	 * Unknown
+	 */
 	public SRLPrivateSaveDataSize: number;
-	public reserved2: number;
+
+	/**
+	 * Unused
+	 */
+	public reserved2: number;  // * 4 bytes
+
+	/**
+	 * Unknown
+	 */
 	public SRLFlag: number;
-	public reserved3: Buffer;
+
+	/**
+	 * Unused
+	 */
+	public reserved3: Buffer; // * 0x31 bytes
+
+	/**
+	 * Unknown
+	 */
 	public accessRights: number;
+
+	/**
+	 * Version of the title the TMD is for
+	 */
 	public titleVersion: number;
+
+	/**
+	 * Number of content records
+	 */
 	public contentCount: number;
+
+	/**
+	 * Unknown
+	 */
 	public bootIndex: number;
+
+	/**
+	 * Unknown
+	 */
 	public minorVersion: number;
-	public contentInfoRecordsHash: Buffer; // * Only seen if version is <= 1
-	public contentInfoRecords: ContentInfoRecord[]; // * Only seen if version is <= 1
+
+	/**
+	 * SHA256 has of the content info records
+	 *
+	 * Optional. Only seen if version is <= 1
+	 */
+	public contentInfoRecordsHash: Buffer;
+
+	/**
+	 * List of content info records.
+	 * If present, this will always contain
+	 * 64 entries
+	 *
+	 * Optional. Only seen if version is <= 1
+	 */
+	public contentInfoRecords: ContentInfoRecord[];
+
+	/**
+	 * List of content records
+	 */
 	public contentChunkRecords: ContentChunkRecord[] = [];
-	public selfCertificate: Certificate; // * Only seen if TMD came from the CDN. Verifies the TMD signature
-	public CACertificate: Certificate; // * Only seen if TMD came from the CDN. Verifies the TMDCertificate signature
-	public signatureBody: Buffer; // * Used to verify the signature
+
+	/**
+	 * Certificate used to verify the TMD signature
+	 *
+	 * Optional. Only seen if TMD came from the CDN
+	 */
+	public selfCertificate: Certificate;
+
+	/**
+	 * Certificate used to verify the `selfCertificate` signature
+	 *
+	 * Optional.  Only seen if TMD came from the CDN
+	 */
+	public CACertificate: Certificate;
+
+	/**
+	 * The data used to create the TMD signature
+	 */
+	public signatureBody: Buffer;
 
 	constructor(tmdOrStream: string | Buffer | Stream) {
 		if (tmdOrStream instanceof Stream) {
@@ -58,6 +176,11 @@ export default class TMD {
 		this.parse();
 	}
 
+	/**
+	 * Gets the size of the TMD
+	 *
+	 * @returns TMD size
+	 */
 	public size(): number {
 		let bufferSize = 0;
 
@@ -101,6 +224,11 @@ export default class TMD {
 		return bufferSize;
 	}
 
+	/**
+	 * Encodes the TMD data into a Buffer
+	 *
+	 * @returns encoded TMD
+	 */
 	public bytes(): Buffer {
 		const bytes = Buffer.alloc(this.size());
 

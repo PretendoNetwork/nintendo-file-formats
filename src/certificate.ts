@@ -17,13 +17,46 @@ export interface SignedData {
 
 export default class Certificate {
 	private stream: FileStream;
+
+
+	/**
+	 * The type of signature used to sign the certificate
+	 */
 	public signatureType: number;
+
+	/**
+	 * The certificate data signature
+	 */
 	public signature: Buffer;
+
+	/**
+	 * The name of the issuer of the certificate
+	 */
 	public issuer: string;
+
+	/**
+	 * The type of key inside the certificate
+	 */
 	public keyType: number; // TODO - Union of KeyTypes values?
+
+	/**
+	 * Certificate name
+	 */
 	public name: string;
+
+	/**
+	 * Certificate expiration time?
+	 */
 	public expiration: number;
+
+	/**
+	 * Internal certificate key data
+	 */
 	public publicKeyData: Buffer;
+
+	/**
+	 * The data used to create the certificate signature
+	 */
 	public signatureBody: Buffer; // * Used to verify the signature
 
 	constructor(fdOrCertificateOrStream: number | string | Buffer | Stream) {
@@ -38,6 +71,11 @@ export default class Certificate {
 		this.parse();
 	}
 
+	/**
+	 * Gets the size of the Certificate
+	 *
+	 * @returns Certificate size
+	 */
 	public size(): number {
 		let bufferSize = 0;
 
@@ -52,6 +90,11 @@ export default class Certificate {
 		return bufferSize;
 	}
 
+	/**
+	 * Encodes the Certificate data into a Buffer
+	 *
+	 * @returns encoded Certificate
+	 */
 	public bytes(): Buffer {
 		const bytes = Buffer.alloc(this.size());
 
@@ -84,6 +127,11 @@ export default class Certificate {
 		this.stream.skip(signatureSize.PADDING);
 	}
 
+	/**
+	 * Validates the input signature using the Certificates internal key data
+	 *
+	 * @returns true if the signature was valid for the input data
+	 */
 	public verifySignature(signedData: SignedData): boolean {
 		switch (this.keyType) {
 			case KeyTypes.RSA_4096:
@@ -113,6 +161,13 @@ export default class Certificate {
 		return crypto.verify('sha256', signedData.signatureBody, key, signedData.signature);
 	}
 
+	/**
+	 * Exports the Certificates internal key data
+	 *
+	 * @returns the key data as a string. May be either an RSA or ECDSA key
+	 *
+	 * @throws {Error} If the key type is unknown
+	 */
 	public exportKey(): string {
 		switch (this.keyType) {
 			case KeyTypes.RSA_4096:
