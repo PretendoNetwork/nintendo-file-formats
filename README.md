@@ -21,7 +21,7 @@ npm i @pretendonetwork/nintendo-files
   - [x] TXT2
   - [x] NLI1
   - [ ] TSY1
-- [ ] BYML/BYAML
+- [x] BYML/BYAML
 - [ ] SARC
 - [ ] SZS (Yaz0)
 

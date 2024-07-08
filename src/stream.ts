@@ -123,6 +123,15 @@ export default class Stream {
 	}
 
 	/**
+	 * Reads a big-endian 3 byte unsigned integer from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readUInt24BE(): number {
+		return this.readBytes(3).readUIntBE(0, 3);
+	}
+
+	/**
 	 * Reads a big-endian uint32 from the current offset
 	 *
 	 * @returns the read number
@@ -147,6 +156,15 @@ export default class Stream {
 	 */
 	public readUInt16LE(): number {
 		return this.readBytes(2).readUInt16LE();
+	}
+
+	/**
+	 * Reads a little-endian 3 byte unsigned integer from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readUInt24LE(): number {
+		return this.readBytes(3).readUIntLE(0, 3);
 	}
 
 	/**
@@ -176,6 +194,17 @@ export default class Stream {
 	 */
 	public readUInt16(): number {
 		return this.bom === 'le' ? this.readUInt16LE() : this.readUInt16BE();
+	}
+
+	/**
+	 * Reads a 3 byte unsigned integer from the current offset
+	 *
+	 * Uses the `bom` field to determine endianness
+	 *
+	 * @returns the read number
+	 */
+	public readUInt24(): number {
+		return this.bom === 'le' ? this.readUInt24LE() : this.readUInt24BE();
 	}
 
 	/**
