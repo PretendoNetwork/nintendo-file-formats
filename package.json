@@ -4,7 +4,7 @@
 	"description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
 	"scripts": {
 		"lint": "npx eslint .",
-	"clean": "npx rimraf ./dist",
+		"clean": "npx rimraf ./dist",
 		"build": "npm run lint && npm run clean && npx tsc && npx tsc-alias"
 	},
 	"keywords": [],
