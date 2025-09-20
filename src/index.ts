@@ -10,7 +10,7 @@ export { default as CIA } from '@/cia';
 export * from '@/cia';
 
 // TODO - Implement other Mii versions
-export { default as MiiGen2 } from '@/mii/mii-gen2';
+export * from '@/mii';
 
 export { default as MSBT } from '@/msbt';
 export * from '@/msbt';
