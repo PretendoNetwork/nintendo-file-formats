@@ -1,6 +1,57 @@
 import { Parser } from 'binary-parser';
 import FileStream from '@/file-stream';
 
+enum LOCKED_REGION {
+	NONE,
+	JPN,
+	USA,
+	EUR
+}
+
+enum CHARACTER_SET {
+	JPN_USA_EUR,
+	CHN,
+	KOR,
+	TWN
+}
+
+type AUTHOR_TYPE = number; // TODO - What are these?
+
+// * Uses the codenames because 3DS doesn't play nice here
+enum DEVICE_ORIGIN {
+	RVL,
+	NTR,
+	CTR,
+	WUP_NX
+}
+
+enum GENDER {
+	MALE,
+	FEMALE
+}
+
+enum FAVORITE_COLOR {
+	RED,
+	ORANGE,
+	YELLOW,
+	LIGHT_GREEN,
+	GREEN,
+	BLUE,
+	LIGHT_BLUE,
+	PINK,
+	PURPLE,
+	BROWN,
+	WHITE,
+	BLACK
+}
+
+// TODO - All the other color/type enums
+
+enum MOLE_TYPE {
+	DISABLED,
+	ENABLED
+}
+
 const field0x01Parser = new Parser()
 	.bit2('unused')
 	.bit2('characterSet')
@@ -328,13 +379,13 @@ export default class FFLiMiiDataCore {
 	 * If set, this locks the Mii to a specific region.
 	 */
 	@mapToDecoded('field0x01.regionLock')
-	public regionMove: number;
+	public regionMove: LOCKED_REGION;
 
 	/**
 	 * Denotes the font type that should be used for strings.
 	 */
 	@mapToDecoded('field0x01.characterSet')
-	public fontRegion: number;
+	public fontRegion: CHARACTER_SET;
 
 	/**
 	 * The room ID the Mii is in when using Mii Maker.
@@ -352,13 +403,13 @@ export default class FFLiMiiDataCore {
 	 * Unknown.
 	 */
 	@mapToDecoded('field0x03.unknown')
-	public authorType: number;
+	public authorType: AUTHOR_TYPE;
 
 	/**
 	 * Denotes the platform the Mii was created on.
 	 */
 	@mapToDecoded('field0x03.deviceOrigin')
-	public birthPlatform: number;
+	public birthPlatform: DEVICE_ORIGIN;
 
 	/**
 	 * Identifies the owner of the Mii, editing restrictions and blue pants.
@@ -467,7 +518,7 @@ export default class FFLiMiiDataCore {
 	 * Denotes the Miis gender.
 	 */
 	@mapToDecoded('field0x18.sex')
-	public gender: number;
+	public gender: GENDER;
 
 	/**
 	 * Denotes the Miis birth month.
@@ -485,7 +536,7 @@ export default class FFLiMiiDataCore {
 	 * Denotes the Miis shirt color.
 	 */
 	@mapToDecoded('field0x18.favoriteColor')
-	public favoriteColor: number;
+	public favoriteColor: FAVORITE_COLOR;
 
 	/**
 	 * If set, this Mii is considered a users "favorite".
@@ -759,7 +810,7 @@ export default class FFLiMiiDataCore {
 	 * If set, the Miis mole is visible.
 	 */
 	@mapToDecoded('field0x46.enableMole')
-	public moleType: number;
+	public moleType: MOLE_TYPE;
 
 	/**
 	 * Mii mole scale.
