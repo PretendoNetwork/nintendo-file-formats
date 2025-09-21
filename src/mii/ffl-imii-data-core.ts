@@ -145,9 +145,393 @@ const coreParser = new Parser()
 	.nest('field0x44', { type: field0x44Parser })
 	.nest('field0x46', { type: field0x46Parser });
 
+type DecodedFFLiMiiDataCore = {
+	field0x00: number;
+	field0x01: {
+		allowCopying: number;
+		hasProfanity: number;
+		regionLock: number;
+		characterSet: number;
+		unused: number;
+	};
+	field0x02: {
+		pageIndex: number;
+		slotIndex: number;
+	};
+	field0x03: {
+		unknown: number;
+		deviceOrigin: number;
+		unused: number;
+	};
+	field0x04: Buffer;
+	field0x0C: {
+		creationDate: number;
+		alwaysSet: number;
+		isTemporary: number;
+		isDSi: number;
+		isSpecialInverted: number;
+	};
+	field0x10: Buffer;
+	field0x18: {
+		sex: number;
+		birthMonth: number;
+		birthDay: number;
+		favoriteColor: number;
+		isFavorite: number;
+		unused: number;
+	};
+	field0x1A: string;
+	field0x2E: {
+		width: number;
+		height: number;
+	};
+	field0x30: {
+		disableSharing: number;
+		faceShape: number;
+		skinColor: number;
+	};
+	field0x31: {
+		wrinkles: number;
+		makeup: number;
+	};
+	field0x32: number;
+	field0x33: {
+		hairColor: number;
+		flipHair: number;
+		unused: number;
+	};
+	field0x34: {
+		eyeStyle: number;
+		eyeColor: number;
+		eyeScale: number;
+		eyeYScale: number;
+		eyeRotation: number;
+		eyeXSpacing: number;
+		eyeYPosition: number;
+		unused: number;
+	};
+	field0x38: {
+		eyebrowStyle: number;
+		eyebrowColor: number;
+		eyebrowScale: number;
+		eyebrowYScale: number;
+		unused1: number;
+		eyebrowRotation: number;
+		unused2: number;
+		eyebrowXSpacing: number;
+		eyebrowYPosition: number;
+		unused3: number;
+	};
+	field0x3C: {
+		noseStyle: number;
+		noseScale: number;
+		noseYPosition: number;
+		unused: number;
+	};
+	field0x3E: {
+		mouthStyle: number;
+		mouthColor: number;
+		mouthScale: number;
+		mouthYScale: number;
+	};
+	field0x40: {
+		mouthYPosition: number;
+		mustacheStyle: number;
+		unused: number;
+	};
+	field0x42: {
+		beardStyle: number;
+		beardColor: number;
+		mustacheScale: number;
+		mustacheYPosition: number;
+		unused: number;
+	};
+	field0x44: {
+		glassesStyle: number;
+		glassesColor: number;
+		glassesScale: number;
+		glassesYPosition: number;
+	};
+	field0x46: {
+		enableMole: number;
+		moleScale: number;
+		moleXPosition: number;
+		moleYPosition: number;
+		unused: number;
+	};
+};
+
+// * Decorator for automatically creating getters and setters for the parsed data
+function mapToDecoded(decodedPath: string, options?: {
+	get?: (value: unknown) => unknown;
+	set?: (value: unknown) => unknown;
+}) {
+	return function(target: unknown, context: ClassFieldDecoratorContext): void {
+		const propertyKey = context.name as string;
+		const pathParts = decodedPath.split('.');
+
+		context.addInitializer(function() {
+			Object.defineProperty(this, propertyKey, {
+				get() {
+					let value = (this as Record<string, unknown>).decoded;
+					for (const part of pathParts) {
+						value = (value as Record<string, unknown>)?.[part];
+					}
+					return options?.get ? options.get(value) : value;
+				},
+				set(newValue) {
+					let current = (this as Record<string, unknown>).decoded as Record<string, unknown>;
+					for (let i = 0; i < pathParts.length - 1; i++) {
+						const part = pathParts[i];
+						if (!(part in current)) {
+							current[part] = {};
+						}
+						current = current[part] as Record<string, unknown>;
+					}
+					const finalKey = pathParts[pathParts.length - 1];
+					current[finalKey] = options?.set ? options.set(newValue) : newValue;
+				},
+				enumerable: true,
+				configurable: true
+			});
+		});
+	};
+}
+
 export default class FFLiMiiDataCore {
 	private stream: FileStream;
-	private decoded = {};
+	private decoded!: DecodedFFLiMiiDataCore;
+
+	@mapToDecoded('field0x00')
+	public miiVersion: number;
+
+	@mapToDecoded('field0x01.allowCopying', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public copyable: boolean;
+
+	@mapToDecoded('field0x01.hasProfanity', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public ngWord: boolean;
+
+	@mapToDecoded('field0x01.regionLock')
+	public regionMove: number;
+
+	@mapToDecoded('field0x01.characterSet')
+	public fontRegion: number;
+
+	@mapToDecoded('field0x02.pageIndex')
+	public roomIndex: number;
+
+	@mapToDecoded('field0x02.slotIndex')
+	public positionInRoom: number;
+
+	@mapToDecoded('field0x03.unknown')
+	public authorType: number;
+
+	@mapToDecoded('field0x03.deviceOrigin')
+	public birthPlatform: number;
+
+	@mapToDecoded('field0x04')
+	public authorID: Buffer;
+
+	@mapToDecoded('field0x0C.creationDate')
+	public creationDate: number;
+
+	@mapToDecoded('field0x0C.alwaysSet', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public alwaysSet: boolean;
+
+	@mapToDecoded('field0x0C.isTemporary', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public isTemporary: boolean;
+
+	@mapToDecoded('field0x0C.isDSi', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public isDSi: boolean;
+
+	@mapToDecoded('field0x0C.isSpecialInverted', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public isSpecialInverted: boolean;
+
+	@mapToDecoded('field0x10')
+	public creatorMAC: Buffer;
+
+	@mapToDecoded('field0x18.sex')
+	public gender: number;
+
+	@mapToDecoded('field0x18.birthMonth')
+	public birthMonth: number;
+
+	@mapToDecoded('field0x18.birthDay')
+	public birthDay: number;
+
+	@mapToDecoded('field0x18.favoriteColor')
+	public favoriteColor: number;
+
+	@mapToDecoded('field0x18.isFavorite', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public favorite: boolean;
+
+	@mapToDecoded('field0x1A')
+	public name: string;
+
+	@mapToDecoded('field0x2E.height')
+	public height: number;
+
+	@mapToDecoded('field0x2E.width')
+	public build: number;
+
+	@mapToDecoded('field0x30.disableSharing', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public localOnly: boolean;
+
+	@mapToDecoded('field0x30.faceShape')
+	public faceType: number;
+
+	@mapToDecoded('field0x30.skinColor')
+	public faceColor: number;
+
+	@mapToDecoded('field0x31.wrinkles')
+	public faceTex: number;
+
+	@mapToDecoded('field0x31.makeup')
+	public faceMake: number;
+
+	@mapToDecoded('field0x32')
+	public hairType: number;
+
+	@mapToDecoded('field0x33.hairColor')
+	public hairColor: number;
+
+	@mapToDecoded('field0x33.flipHair', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public hairFlip: boolean;
+
+	@mapToDecoded('field0x34.eyeStyle')
+	public eyeType: number;
+
+	@mapToDecoded('field0x34.eyeColor')
+	public eyeColor: number;
+
+	@mapToDecoded('field0x34.eyeScale')
+	public eyeScale: number;
+
+	@mapToDecoded('field0x34.eyeYScale')
+	public eyeAspect: number;
+
+	@mapToDecoded('field0x34.eyeRotation')
+	public eyeRotate: number;
+
+	@mapToDecoded('field0x34.eyeXSpacing')
+	public eyeX: number;
+
+	@mapToDecoded('field0x34.eyeYPosition')
+	public eyeY: number;
+
+	@mapToDecoded('field0x38.eyebrowStyle')
+	public eyebrowType: number;
+
+	@mapToDecoded('field0x38.eyebrowColor')
+	public eyebrowColor: number;
+
+	@mapToDecoded('field0x38.eyebrowScale')
+	public eyebrowScale: number;
+
+	@mapToDecoded('field0x38.eyebrowYScale')
+	public eyebrowAspect: number;
+
+	@mapToDecoded('field0x38.eyebrowRotation')
+	public eyebrowRotate: number;
+
+	@mapToDecoded('field0x38.eyebrowXSpacing')
+	public eyebrowX: number;
+
+	@mapToDecoded('field0x38.eyebrowYPosition')
+	public eyebrowY: number;
+
+	@mapToDecoded('field0x3C.noseStyle')
+	public noseType: number;
+
+	@mapToDecoded('field0x3C.noseScale')
+	public noseScale: number;
+
+	@mapToDecoded('field0x3C.noseYPosition')
+	public noseY: number;
+
+	@mapToDecoded('field0x3E.mouthStyle')
+	public mouthType: number;
+
+	@mapToDecoded('field0x3E.mouthColor')
+	public mouthColor: number;
+
+	@mapToDecoded('field0x3E.mouthScale')
+	public mouthScale: number;
+
+	@mapToDecoded('field0x3E.mouthYScale')
+	public mouthAspect: number;
+
+	@mapToDecoded('field0x40.mouthYPosition')
+	public mouthY: number;
+
+	@mapToDecoded('field0x40.mustacheStyle')
+	public mustacheType: number;
+
+	@mapToDecoded('field0x42.beardStyle')
+	public beardType: number;
+
+	@mapToDecoded('field0x42.beardColor')
+	public beardColor: number;
+
+	@mapToDecoded('field0x42.mustacheScale')
+	public beardScale: number;
+
+	@mapToDecoded('field0x42.mustacheYPosition')
+	public beardY: number;
+
+	@mapToDecoded('field0x44.glassesStyle')
+	public glassType: number;
+
+	@mapToDecoded('field0x44.glassesColor')
+	public glassColor: number;
+
+	@mapToDecoded('field0x44.glassesScale')
+	public glassScale: number;
+
+	@mapToDecoded('field0x44.glassesYPosition')
+	public glassY: number;
+
+	@mapToDecoded('field0x46.enableMole', {
+		get: (value: unknown) => !!value,
+		set: (value: unknown) => value ? 1 : 0
+	})
+	public moleType: boolean;
+
+	@mapToDecoded('field0x46.moleScale')
+	public moleScale: number;
+
+	@mapToDecoded('field0x46.moleXPosition')
+	public moleX: number;
+
+	@mapToDecoded('field0x46.moleYPosition')
+	public moleY: number;
 
 	/**
 	 * Parses the FFLiMiiDataCore from the provided `fdOrPath`
