@@ -2,125 +2,116 @@ import { Parser } from 'binary-parser';
 import FileStream from '@/file-stream';
 
 const field0x01Parser = new Parser()
-	.bit1('allowCopying')
-	.bit1('hasProfanity')
-	.bit2('regionLock')
+	.bit2('unused')
 	.bit2('characterSet')
-	.bit2('unused');
+	.bit2('regionLock')
+	.bit1('hasProfanity')
+	.bit1('allowCopying');
 
 const field0x02Parser = new Parser()
-	.bit4('pageIndex')
-	.bit4('slotIndex');
+	.bit4('slotIndex')
+	.bit4('pageIndex');
 
 const field0x03Parser = new Parser()
-	.bit4('unknown')
+	.bit1('unused')
 	.bit3('deviceOrigin')
-	.bit1('unused');
+	.bit4('unknown');
 
 const field0x0CParser = new Parser()
 	.endianness('big')
-	.bit28('creationDate')
-	.bit1('isValid')
-	.bit1('isNonUserMii')
+	.bit1('isNormalMii')
 	.bit1('isDSi')
-	.bit1('isNormalMii');
+	.bit1('isNonUserMii')
+	.bit1('isValid')
+	.bit28('creationDate');
 
 const field0x18Parser = new Parser()
-	.bit1('sex')
-	.bit4('birthMonth')
-	.bit5('birthDay')
-	.bit4('favoriteColor')
+	.bit1('unused')
 	.bit1('isFavorite')
-	.bit1('unused');
+	.bit4('favoriteColor')
+	.bit5('birthDay')
+	.bit4('birthMonth')
+	.bit1('sex');
 
 const field0x2EParser = new Parser()
 	.uint8('width')
 	.uint8('height');
 
 const field0x30Parser = new Parser()
-	.bit1('disableSharing')
+	.bit3('skinColor')
 	.bit4('faceShape')
-	.bit3('skinColor');
+	.bit1('disableSharing');
 
 const field0x31Parser = new Parser()
-	.bit4('wrinkles')
-	.bit4('makeup');
+	.bit4('makeup')
+	.bit4('wrinkles');
 
 const field0x33Parser = new Parser()
-	.bit3('hairColor')
+	.bit4('unused')
 	.bit1('flipHair')
-	.bit4('unused');
+	.bit3('hairColor');
 
 const field0x34Parser = new Parser()
-	.bit6('eyeStyle')
-	.bit3('eyeColor')
-	.bit4('eyeScale')
-	.bit3('eyeYScale')
-	.bit5('eyeRotation')
-	.bit4('eyeXSpacing')
+	.bit2('unused')
 	.bit5('eyeYPosition')
-	.bit2('unused');
+	.bit4('eyeXSpacing')
+	.bit5('eyeRotation')
+	.bit3('eyeYScale')
+	.bit4('eyeScale')
+	.bit3('eyeColor')
+	.bit6('eyeStyle');
 
 const field0x38Parser = new Parser()
-	.bit5('eyebrowStyle')
-	.bit3('eyebrowColor')
-	.bit4('eyebrowScale')
-	.bit3('eyebrowYScale')
-	.bit1('unused1')
-	.bit4('eyebrowRotation')
-	.bit1('unused2')
-	.bit4('eyebrowXSpacing')
+	.bit2('unused3')
 	.bit5('eyebrowYPosition')
-	.bit2('unused3');
+	.bit4('eyebrowXSpacing')
+	.bit1('unused2')
+	.bit4('eyebrowRotation')
+	.bit1('unused1')
+	.bit3('eyebrowYScale')
+	.bit4('eyebrowScale')
+	.bit3('eyebrowColor')
+	.bit5('eyebrowStyle');
 
 const field0x3CParser = new Parser()
-	.bit5('noseStyle')
-	.bit4('noseScale')
+	.bit2('unused')
 	.bit5('noseYPosition')
-	.bit2('unused');
+	.bit4('noseScale')
+	.bit5('noseStyle');
 
 const field0x3EParser = new Parser()
-	.bit6('mouthStyle')
-	.bit3('mouthColor')
+	.bit3('mouthYScale')
 	.bit4('mouthScale')
-	.bit3('mouthYScale');
+	.bit3('mouthColor')
+	.bit6('mouthStyle');
 
 const field0x40Parser = new Parser()
-	.bit5('mouthYPosition')
+	.bit8('unused')
 	.bit3('mustacheStyle')
-	.bit8('unused');
+	.bit5('mouthYPosition');
 
 const field0x42Parser = new Parser()
-	.bit3('beardStyle')
-	.bit3('beardColor')
-	.bit4('mustacheScale')
+	.bit1('unused')
 	.bit5('mustacheYPosition')
-	.bit1('unused');
+	.bit4('mustacheScale')
+	.bit3('beardColor')
+	.bit3('beardStyle');
 
 const field0x44Parser = new Parser()
-	.bit4('glassesStyle')
-	.bit3('glassesColor')
+	.bit5('glassesYPosition')
 	.bit4('glassesScale')
-	.bit5('glassesYPosition');
+	.bit3('glassesColor')
+	.bit4('glassesStyle');
 
 const field0x46Parser = new Parser()
-	.bit1('enableMole')
-	.bit4('moleScale')
-	.bit5('moleXPosition')
+	.bit1('unused')
 	.bit5('moleYPosition')
-	.bit1('unused');
+	.bit5('moleXPosition')
+	.bit4('moleScale')
+	.bit1('enableMole');
 
-// * The binary-parser encoder fork can't write bit
-// * fields larger than 32 bits, and has no way of
-// * marking a bit field as "ended" to start a new
-// * one. So all bit definitions are treated as the
-// * same singular bit field. To get around this, we
-// * have to use nested parsers. A bit messy, but it
-// * works good enough. Also since some data spans
-// * multiple bytes/bit fields, for consistency I've
-// * chosen to just name every top-level field after
-// * its byte offset. We can map the values later
 const coreParser = new Parser()
+	.endianness('little')
 	.uint8('field0x00')
 	.nest('field0x01', { type: field0x01Parser })
 	.nest('field0x02', { type: field0x02Parser })
