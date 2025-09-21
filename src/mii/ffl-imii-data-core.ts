@@ -145,6 +145,15 @@ const coreParser = new Parser()
 	.nest('field0x44', { type: field0x44Parser })
 	.nest('field0x46', { type: field0x46Parser });
 
+const createIDParser = new Parser()
+	.endianness('big')
+	.bit28('creationDate')
+	.bit1('alwaysSet')
+	.bit1('isTemporary')
+	.bit1('isDSi')
+	.bit1('isSpecialInverted')
+	.buffer('mac', { length: 6 });
+
 type DecodedFFLiMiiDataCore = {
 	field0x00: number;
 	field0x01: {
@@ -337,6 +346,28 @@ export default class FFLiMiiDataCore {
 
 	@mapToDecoded('field0x04')
 	public authorID: Buffer;
+
+	public get createID(): Buffer {
+		return createIDParser.encode({
+			creationDate: this.creationDate,
+			alwaysSet: this.alwaysSet,
+			isTemporary: this.isTemporary,
+			isDSi: this.isDSi,
+			isSpecialInverted: this.isSpecialInverted,
+			mac: this.creatorMAC
+		});
+	}
+
+	public set createID(createID: Buffer) {
+		const decoded = createIDParser.parse(createID);
+
+		this.creationDate = decoded.creationDate;
+		this.alwaysSet = decoded.alwaysSet;
+		this.isTemporary = decoded.isTemporary;
+		this.isDSi = decoded.isDSi;
+		this.isSpecialInverted = decoded.isSpecialInverted;
+		this.creatorMAC = decoded.mac;
+	}
 
 	@mapToDecoded('field0x0C.creationDate')
 	public creationDate: number;
