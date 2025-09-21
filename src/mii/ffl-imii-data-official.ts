@@ -125,7 +125,7 @@ export default class FFLiMiiDataOfficial {
 		const size = this.stream.remaining();
 
 		if (size !== 0x5C) {
-			throw new Error(`Invalid FFLiMiiDataOfficial size. Expected 92 bytes, got ${size}`);
+			throw new Error(`Invalid ${this.constructor.name} size. Expected 92 bytes, got ${size}`);
 		}
 
 		const ffliMiiDataCore = this.stream.readBytes(0x48);
@@ -135,3 +135,8 @@ export default class FFLiMiiDataOfficial {
 		this.creatorName = creatorName.replace(/\0.*$/, ''); // TODO - This is kinda ugly?
 	}
 }
+
+// * Aliases. No functionality differences, just purely for different visual contexts
+
+export class CFLiPackedMiiDataOfficial extends FFLiMiiDataOfficial {}
+export class Ver3StoreDataRaw extends FFLiMiiDataOfficial {}

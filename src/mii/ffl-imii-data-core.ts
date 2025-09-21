@@ -887,9 +887,14 @@ export default class FFLiMiiDataCore {
 		const size = this.stream.remaining();
 
 		if (size !== 0x48) {
-			throw new Error(`Invalid FFLiMiiDataCore size. Expected 72 bytes, got ${size}`);
+			throw new Error(`Invalid ${this.constructor.name} size. Expected 72 bytes, got ${size}`);
 		}
 
 		this.decoded = coreParser.parse(this.stream.readBytes(0x48));
 	}
 }
+
+// * Aliases. No functionality differences, just purely for different visual contexts
+
+export class CFLiPackedMiiDataCore extends FFLiMiiDataCore {}
+export class CFLiRFLMiiDataCore extends FFLiMiiDataCore {}

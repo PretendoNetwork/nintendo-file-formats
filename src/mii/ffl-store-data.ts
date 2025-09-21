@@ -139,7 +139,7 @@ export default class FFLStoreData {
 		const size = this.stream.remaining();
 
 		if (size !== 0x60) {
-			throw new Error(`Invalid FFLStoreData size. Expected 96 bytes, got ${size}`);
+			throw new Error(`Invalid ${this.constructor.name} size. Expected 96 bytes, got ${size}`);
 		}
 
 		const ffliMiiDataOfficial = this.stream.readBytes(0x5C);
@@ -153,7 +153,7 @@ export default class FFLStoreData {
 		const calculatedCRC = this.calculateCRC(crcData);
 
 		if (expectedCRC !== calculatedCRC) {
-			throw new Error(`Invalid FFLStoreData CRC16. Expected ${expectedCRC}, got ${calculatedCRC}`);
+			throw new Error(`Invalid ${this.constructor.name} CRC16. Expected ${expectedCRC}, got ${calculatedCRC}`);
 		}
 
 		this.FFLiMiiDataOfficial.parseFromBuffer(ffliMiiDataOfficial);
@@ -180,3 +180,9 @@ export default class FFLStoreData {
 		return crc & 0xFFFF;
 	}
 }
+
+// * Aliases. No functionality differences, just purely for different visual contexts
+
+export class CFLStoreData extends FFLStoreData {}
+export class CFLiMiiDataPacket extends FFLStoreData {}
+export class Ver3StoreData extends FFLStoreData {}
