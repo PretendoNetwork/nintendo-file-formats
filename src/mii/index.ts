@@ -7,3 +7,7 @@ export * from '@/mii/ffl-imii-data-official';
 
 export { default as FFLiMiiDataCore } from '@/mii/ffl-imii-data-core';
 export *from '@/mii/ffl-imii-data-core';
+
+// * Mii Studio
+export { default as MiiStudioEncoder } from '@/mii/mii-studio-encoder';
+export * from '@/mii/mii-studio-encoder';

@@ -180,6 +180,8 @@ function mapToDecoded(decodedPath: string) {
 	};
 }
 
+// TODO - Hook this up to something like Arian's WASM port of FFL?
+
 export default class FFLiMiiDataCore {
 	private stream: FileStream;
 	private decoded!: ReturnType<typeof BinaryParser.infer<typeof coreParser>>;
