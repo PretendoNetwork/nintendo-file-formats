@@ -26,6 +26,8 @@ type CommandType =
 	| { type: 'boolean_bit'; name: string; bits: 1; }
 	| { type: 'uint'; name: string; options?: NumberFieldOptions; bits: 8; }
 	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
+	| { type: 'int'; name: string; options?: NumberFieldOptions; bits: 8; }
+	| { type: 'int'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
 	| { type: 'buffer'; name: string; length: number; bits: number; }
 	| { type: 'string'; name: string; length: number; encoding: BufferEncoding; bits: number; };
 
@@ -468,6 +470,23 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	}
 
 	/**
+	 * Reads a signed 8-bit integer
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
+			name: name,
+			...(options && { options }),
+			bits: 8
+		});
+
+		return this;
+	}
+
+	/**
 	 * Reads an unsigned 16-bit integer using the currently set endianness
 	 *
 	 * @param name - The name of the decoded field
@@ -522,6 +541,60 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	}
 
 	/**
+	 * Reads a signed 16-bit integer using the currently set endianness
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
+			name: name,
+			endianness: 'current',
+			...(options && { options }),
+			bits: 16
+		});
+
+		return this;
+	}
+
+	/**
+	 * Reads a signed 16-bit integer in little-endian mode, regardless of the currently set endianness
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int16le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
+			name: name,
+			endianness: 'little',
+			...(options && { options }),
+			bits: 16
+		});
+
+		return this;
+	}
+
+	/**
+	 * Reads a signed 16-bit integer in big-endian mode, regardless of the currently set endianness
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int16be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
+			name: name,
+			endianness: 'big',
+			...(options && { options }),
+			bits: 16
+		});
+
+		return this;
+	}
+
+	/**
 	 * Reads an unsigned 32-bit integer using the currently set endianness
 	 *
 	 * @param name - The name of the decoded field
@@ -566,6 +639,60 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public uint32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
 			type: 'uint',
+			name: name,
+			endianness: 'big',
+			...(options && { options }),
+			bits: 32
+		});
+
+		return this;
+	}
+
+	/**
+	 * Reads a signed 32-bit integer using the currently set endianness
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
+			name: name,
+			endianness: 'current',
+			...(options && { options }),
+			bits: 32
+		});
+
+		return this;
+	}
+
+	/**
+	 * Reads a signed 32-bit integer in little-endian mode, regardless of the currently set endianness
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int32le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
+			name: name,
+			endianness: 'little',
+			...(options && { options }),
+			bits: 32
+		});
+
+		return this;
+	}
+
+	/**
+	 * Reads a signed 32-bit integer in big-endian mode, regardless of the currently set endianness
+	 *
+	 * @param name - The name of the decoded field
+	 * @returns The current `BinaryParser` instance
+	 */
+	public int32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		this.commands.push({
+			type: 'int',
 			name: name,
 			endianness: 'big',
 			...(options && { options }),
@@ -778,6 +905,18 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				stream.bigEndian = currentEndianness;
 			}
 
+			if (command.type === 'int') {
+				const currentEndianness = stream.bigEndian;
+
+				if (command.bits !== 8 && command.endianness !== 'current') {
+					stream.bigEndian = command.endianness === 'big' ? true : false;
+				}
+
+				value = command.bits === 8 ? stream.readInt8() : command.bits === 16 ? stream.readInt16() : stream.readInt32();
+
+				stream.bigEndian = currentEndianness;
+			}
+
 			if (command.type === 'buffer') {
 				value = Buffer.from(stream.readArrayBuffer(command.length));
 			}
@@ -908,6 +1047,20 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				const value = parsed[command.name] as number;
 
 				command.bits === 8 ? stream.writeUint8(value) : command.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
+
+				stream.bigEndian = currentEndianness;
+			}
+
+			if (command.type === 'int') {
+				const currentEndianness = stream.bigEndian;
+
+				if (command.bits !== 8 && command.endianness !== 'current') {
+					stream.bigEndian = command.endianness === 'big' ? true : false;
+				}
+
+				const value = parsed[command.name] as number;
+
+				command.bits === 8 ? stream.writeInt8(value) : command.bits === 16 ? stream.writeInt16(value) : stream.writeInt32(value);
 
 				stream.bigEndian = currentEndianness;
 			}
