@@ -12,15 +12,15 @@ import { BitStream } from 'bit-buffer';
 // *
 // * Plus this adds in many helpful additions like bit skipping, more type safety, a Zod-like interface, etc.
 
-// TODO - Remove all the "unknown" usage? Seems kinda smelly
+// TODO - Remove all the "unknown"/"any" usage? Seems kinda smelly
 // TODO - Support nested structures? We don't need it right now but might be nice to have
 
 type CommandType =
-	| { type: 'set_endianness'; endianness: 'big' | 'little'; bits: 0; }
-	| { type: 'check_min'; value: number; bits: 0; }
-	| { type: 'check_max'; value: number; bits: 0; }
-	| { type: 'check_range'; min: number; max: number; bits: 0; }
-	| { type: 'custom_validate'; callback: (parsed: any) => void; bits: 0; } // eslint-disable-line @typescript-eslint/no-explicit-any
+	| { type: 'set_endianness'; endianness: 'big' | 'little'; }
+	| { type: 'check_min'; value: number; }
+	| { type: 'check_max'; value: number; }
+	| { type: 'check_range'; min: number; max: number; }
+	| { type: 'custom_validate'; callback: (parsed: any) => void; } // eslint-disable-line @typescript-eslint/no-explicit-any
 	| { type: 'skip'; bits: number; }
 	| { type: 'bits'; name: string; options?: NumberFieldOptions; bits: number; }
 	| { type: 'boolean_bit'; name: string; bits: 1; }
@@ -69,8 +69,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public endianness(endianness: 'big' | 'little'): this {
 		this.commands.push({
 			type: 'set_endianness',
-			endianness: endianness,
-			bits: 0
+			endianness: endianness
 		});
 
 		return this;
@@ -646,8 +645,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public min(value: number): this {
 		this.commands.push({
 			type: 'check_min',
-			value: value,
-			bits: 0
+			value: value
 		});
 
 		return this;
@@ -663,8 +661,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public max(value: number): this {
 		this.commands.push({
 			type: 'check_max',
-			value: value,
-			bits: 0
+			value: value
 		});
 
 		return this;
@@ -682,8 +679,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'check_range',
 			min: min,
-			max: max,
-			bits: 0
+			max: max
 		});
 
 		return this;
@@ -699,8 +695,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public validate(callback: (parsed: T) => void): this {
 		this.commands.push({
 			type: 'custom_validate',
-			callback: callback,
-			bits: 0
+			callback: callback
 		});
 
 		return this;
@@ -964,8 +959,10 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public size(): number {
 		let bits = 0;
 
-		for (const data of this.commands) {
-			bits += data.bits;
+		for (const command of this.commands) {
+			if ('bits' in command) {
+				bits += command.bits;
+			}
 		}
 
 		return Math.ceil(bits / 8);
