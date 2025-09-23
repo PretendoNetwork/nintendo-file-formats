@@ -1,4 +1,4 @@
-import { Parser } from 'binary-parser';
+import BinaryParser from '@/binary-parser';
 import FileStream from '@/file-stream';
 
 enum LOCKED_REGION {
@@ -52,267 +52,103 @@ enum MOLE_TYPE {
 	ENABLED
 }
 
-const field0x01Parser = new Parser()
-	.bit2('unused')
-	.bit2('characterSet')
+// * Names are taken straight from https://github.com/PretendoNetwork/mii-js
+const coreParser = new BinaryParser()
+	.uint8('version')
+	.booleanBit('allowCopying')
+	.booleanBit('profanityFlag')
 	.bit2('regionLock')
-	.bit1('hasProfanity')
-	.bit1('allowCopying');
-
-const field0x02Parser = new Parser()
+	.bit2('characterSet')
+	.skipBits(2)
+	.bit4('pageIndex')
 	.bit4('slotIndex')
-	.bit4('pageIndex');
-
-const field0x03Parser = new Parser()
-	.bit1('unused')
+	.bit4('unknown1')
 	.bit3('deviceOrigin')
-	.bit4('unknown');
-
-const field0x0CParser = new Parser()
+	.skipBits(1)
+	.buffer('systemId', { length: 8 })
 	.endianness('big')
-	.bit1('isNormalMii')
-	.bit1('isDSi')
-	.bit1('isNonUserMii')
-	.bit1('isValid')
-	.bit28('creationDate');
-
-const field0x18Parser = new Parser()
-	.bit1('unused')
-	.bit1('isFavorite')
-	.bit4('favoriteColor')
-	.bit5('birthDay')
-	.bit4('birthMonth')
-	.bit1('sex');
-
-const field0x2EParser = new Parser()
-	.uint8('width')
-	.uint8('height');
-
-const field0x30Parser = new Parser()
-	.bit3('skinColor')
-	.bit4('faceShape')
-	.bit1('disableSharing');
-
-const field0x31Parser = new Parser()
-	.bit4('makeup')
-	.bit4('wrinkles');
-
-const field0x33Parser = new Parser()
-	.bit4('unused')
-	.bit1('flipHair')
-	.bit3('hairColor');
-
-const field0x34Parser = new Parser()
-	.bit2('unused')
-	.bit5('eyeYPosition')
-	.bit4('eyeXSpacing')
-	.bit5('eyeRotation')
-	.bit3('eyeYScale')
-	.bit4('eyeScale')
-	.bit3('eyeColor')
-	.bit6('eyeStyle');
-
-const field0x38Parser = new Parser()
-	.bit2('unused3')
-	.bit5('eyebrowYPosition')
-	.bit4('eyebrowXSpacing')
-	.bit1('unused2')
-	.bit4('eyebrowRotation')
-	.bit1('unused1')
-	.bit3('eyebrowYScale')
-	.bit4('eyebrowScale')
-	.bit3('eyebrowColor')
-	.bit5('eyebrowStyle');
-
-const field0x3CParser = new Parser()
-	.bit2('unused')
-	.bit5('noseYPosition')
-	.bit4('noseScale')
-	.bit5('noseStyle');
-
-const field0x3EParser = new Parser()
-	.bit3('mouthYScale')
-	.bit4('mouthScale')
-	.bit3('mouthColor')
-	.bit6('mouthStyle');
-
-const field0x40Parser = new Parser()
-	.bit8('unused')
-	.bit3('mustacheStyle')
-	.bit5('mouthYPosition');
-
-const field0x42Parser = new Parser()
-	.bit1('unused')
-	.bit5('mustacheYPosition')
-	.bit4('mustacheScale')
-	.bit3('beardColor')
-	.bit3('beardStyle');
-
-const field0x44Parser = new Parser()
-	.bit5('glassesYPosition')
-	.bit4('glassesScale')
-	.bit3('glassesColor')
-	.bit4('glassesStyle');
-
-const field0x46Parser = new Parser()
-	.bit1('unused')
-	.bit5('moleYPosition')
-	.bit5('moleXPosition')
-	.bit4('moleScale')
-	.bit1('enableMole');
-
-const coreParser = new Parser()
+	.booleanBit('normalMii')
+	.booleanBit('dsMii')
+	.booleanBit('nonUserMii')
+	.booleanBit('isValid')
+	.bit28('creationTime')
 	.endianness('little')
-	.uint8('field0x00')
-	.nest('field0x01', { type: field0x01Parser })
-	.nest('field0x02', { type: field0x02Parser })
-	.nest('field0x03', { type: field0x03Parser })
-	.buffer('field0x04', { length: 8 })
-	.nest('field0x0C', { type: field0x0CParser })
-	.buffer('field0x10', { length: 6 })
+	.buffer('consoleMAC', { length: 6 })
 	.skip(2)
-	.nest('field0x18', { type: field0x18Parser })
-	.string('field0x1A', { length: 20, encoding: 'utf-16le', stripNull: true })
-	.nest('field0x2E', { type: field0x2EParser })
-	.nest('field0x30', { type: field0x30Parser })
-	.nest('field0x31', { type: field0x31Parser })
-	.uint8('field0x32')
-	.nest('field0x33', { type: field0x33Parser })
-	.nest('field0x34', { type: field0x34Parser })
-	.nest('field0x38', { type: field0x38Parser })
-	.nest('field0x3C', { type: field0x3CParser })
-	.nest('field0x3E', { type: field0x3EParser })
-	.nest('field0x40', { type: field0x40Parser })
-	.nest('field0x42', { type: field0x42Parser })
-	.nest('field0x44', { type: field0x44Parser })
-	.nest('field0x46', { type: field0x46Parser });
+	.bit1('gender')
+	.bit4('birthMonth')
+	.bit5('birthDay')
+	.bit4('favoriteColor')
+	.booleanBit('favorite')
+	.skipBits(1)
+	.string('miiName', { length: 20, encoding: 'utf16le' })
+	.uint8('height')
+	.uint8('build')
+	.booleanBit('disableSharing')
+	.bit4('faceType')
+	.bit3('skinColor')
+	.bit4('wrinklesType')
+	.bit4('makeupType')
+	.uint8('hairType')
+	.bit3('hairColor')
+	.booleanBit('flipHair')
+	.skipBits(4)
+	.bit6('eyeType')
+	.bit3('eyeColor')
+	.bit4('eyeScale')
+	.bit3('eyeVerticalStretch')
+	.bit5('eyeRotation')
+	.bit4('eyeSpacing')
+	.bit5('eyeYPosition')
+	.skipBits(2)
+	.bit5('eyebrowType')
+	.bit3('eyebrowColor')
+	.bit4('eyebrowScale')
+	.bit3('eyebrowVerticalStretch')
+	.skipBits(1)
+	.bit4('eyebrowRotation')
+	.skipBits(1)
+	.bit4('eyebrowSpacing')
+	.bit5('eyebrowYPosition')
+	.skipBits(2)
+	.bit5('noseType')
+	.bit4('noseScale')
+	.bit5('noseYPosition')
+	.skipBits(2)
+	.bit6('mouthType')
+	.bit3('mouthColor')
+	.bit4('mouthScale')
+	.bit3('mouthHorizontalStretch')
+	.bit5('mouthYPosition')
+	.bit3('mustacheType')
+	.uint8('unknown2')
+	.bit3('beardType')
+	.bit3('facialHairColor')
+	.bit4('mustacheScale')
+	.bit5('mustacheYPosition')
+	.skipBits(1)
+	.bit4('glassesType')
+	.bit3('glassesColor')
+	.bit4('glassesScale')
+	.bit5('glassesYPosition')
+	.bit1('moleEnabled')
+	.bit4('moleScale')
+	.bit5('moleXPosition')
+	.bit5('moleYPosition');
 
-const createIDParser = new Parser()
-	.nest('field0x0C', { type: field0x0CParser })
-	.buffer('mac', { length: 6 });
-
-type DecodedFFLiMiiDataCore = {
-	field0x00: number;
-	field0x01: {
-		allowCopying: number;
-		hasProfanity: number;
-		regionLock: number;
-		characterSet: number;
-		unused: number;
-	};
-	field0x02: {
-		pageIndex: number;
-		slotIndex: number;
-	};
-	field0x03: {
-		unknown: number;
-		deviceOrigin: number;
-		unused: number;
-	};
-	field0x04: Buffer;
-	field0x0C: {
-		creationDate: number;
-		isValid: number;
-		isNonUserMii: number;
-		isDSi: number;
-		isNormalMii: number;
-	};
-	field0x10: Buffer;
-	field0x18: {
-		sex: number;
-		birthMonth: number;
-		birthDay: number;
-		favoriteColor: number;
-		isFavorite: number;
-		unused: number;
-	};
-	field0x1A: string;
-	field0x2E: {
-		width: number;
-		height: number;
-	};
-	field0x30: {
-		disableSharing: number;
-		faceShape: number;
-		skinColor: number;
-	};
-	field0x31: {
-		wrinkles: number;
-		makeup: number;
-	};
-	field0x32: number;
-	field0x33: {
-		hairColor: number;
-		flipHair: number;
-		unused: number;
-	};
-	field0x34: {
-		eyeStyle: number;
-		eyeColor: number;
-		eyeScale: number;
-		eyeYScale: number;
-		eyeRotation: number;
-		eyeXSpacing: number;
-		eyeYPosition: number;
-		unused: number;
-	};
-	field0x38: {
-		eyebrowStyle: number;
-		eyebrowColor: number;
-		eyebrowScale: number;
-		eyebrowYScale: number;
-		unused1: number;
-		eyebrowRotation: number;
-		unused2: number;
-		eyebrowXSpacing: number;
-		eyebrowYPosition: number;
-		unused3: number;
-	};
-	field0x3C: {
-		noseStyle: number;
-		noseScale: number;
-		noseYPosition: number;
-		unused: number;
-	};
-	field0x3E: {
-		mouthStyle: number;
-		mouthColor: number;
-		mouthScale: number;
-		mouthYScale: number;
-	};
-	field0x40: {
-		mouthYPosition: number;
-		mustacheStyle: number;
-		unused: number;
-	};
-	field0x42: {
-		beardStyle: number;
-		beardColor: number;
-		mustacheScale: number;
-		mustacheYPosition: number;
-		unused: number;
-	};
-	field0x44: {
-		glassesStyle: number;
-		glassesColor: number;
-		glassesScale: number;
-		glassesYPosition: number;
-	};
-	field0x46: {
-		enableMole: number;
-		moleScale: number;
-		moleXPosition: number;
-		moleYPosition: number;
-		unused: number;
-	};
-};
+const createIDParser = new BinaryParser()
+	.endianness('big')
+	.booleanBit('normalMii')
+	.booleanBit('dsMii')
+	.booleanBit('nonUserMii')
+	.booleanBit('isValid')
+	.bit28('creationTime')
+	.endianness('little')
+	.buffer('consoleMAC', { length: 6 });
 
 // * Decorator for automatically creating getters and setters for the parsed data
-function mapToDecoded(decodedPath: string, options?: {
-	get?: (value: unknown) => unknown;
-	set?: (value: unknown) => unknown;
-}) {
-	return function(target: unknown, context: ClassFieldDecoratorContext): void {
+function mapToDecoded(decodedPath: string) {
+	return function(_target: unknown, context: ClassFieldDecoratorContext): void {
 		const propertyKey = context.name as string;
 		const pathParts = decodedPath.split('.');
 
@@ -323,7 +159,7 @@ function mapToDecoded(decodedPath: string, options?: {
 					for (const part of pathParts) {
 						value = (value as Record<string, unknown>)?.[part];
 					}
-					return options?.get ? options.get(value) : value;
+					return value;
 				},
 				set(newValue) {
 					let current = (this as Record<string, unknown>).decoded as Record<string, unknown>;
@@ -335,7 +171,7 @@ function mapToDecoded(decodedPath: string, options?: {
 						current = current[part] as Record<string, unknown>;
 					}
 					const finalKey = pathParts[pathParts.length - 1];
-					current[finalKey] = options?.set ? options.set(newValue) : newValue;
+					current[finalKey] = newValue;
 				},
 				enumerable: true,
 				configurable: true
@@ -346,22 +182,19 @@ function mapToDecoded(decodedPath: string, options?: {
 
 export default class FFLiMiiDataCore {
 	private stream: FileStream;
-	private decoded!: DecodedFFLiMiiDataCore;
+	private decoded!: ReturnType<typeof BinaryParser.infer<typeof coreParser>>;
 
 	/**
 	 * The Mii data version. Always 3, unless the Mii was made
 	 * with the Wii U GamePad camera, in which case 0.
 	 */
-	@mapToDecoded('field0x00')
+	@mapToDecoded('version')
 	public miiVersion: number;
 
 	/**
 	 * If set, the Mii can be copied.
 	 */
-	@mapToDecoded('field0x01.allowCopying', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('allowCopying')
 	public copyable: boolean;
 
 	/**
@@ -369,46 +202,43 @@ export default class FFLiMiiDataCore {
 	 * the Mii name or creator name. If set, both the Mii name
 	 * and creator name are replaced with "???".
 	 */
-	@mapToDecoded('field0x01.hasProfanity', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('profanityFlag')
 	public ngWord: boolean;
 
 	/**
 	 * If set, this locks the Mii to a specific region.
 	 */
-	@mapToDecoded('field0x01.regionLock')
+	@mapToDecoded('regionLock')
 	public regionMove: LOCKED_REGION;
 
 	/**
 	 * Denotes the font type that should be used for strings.
 	 */
-	@mapToDecoded('field0x01.characterSet')
+	@mapToDecoded('characterSet')
 	public fontRegion: CHARACTER_SET;
 
 	/**
 	 * The room ID the Mii is in when using Mii Maker.
 	 */
-	@mapToDecoded('field0x02.pageIndex')
+	@mapToDecoded('pageIndex')
 	public roomIndex: number;
 
 	/**
 	 * The slot ID the Mii is in when using Mii Maker.
 	 */
-	@mapToDecoded('field0x02.slotIndex')
+	@mapToDecoded('slotIndex')
 	public positionInRoom: number;
 
 	/**
 	 * Unknown.
 	 */
-	@mapToDecoded('field0x03.unknown')
+	@mapToDecoded('unknown1')
 	public authorType: AUTHOR_TYPE;
 
 	/**
 	 * Denotes the platform the Mii was created on.
 	 */
-	@mapToDecoded('field0x03.deviceOrigin')
+	@mapToDecoded('deviceOrigin')
 	public birthPlatform: DEVICE_ORIGIN;
 
 	/**
@@ -416,7 +246,7 @@ export default class FFLiMiiDataCore {
 	 * In older Mii formats, this was tied to the console MAC. This is no
 	 * longer the case.
 	 */
-	@mapToDecoded('field0x04')
+	@mapToDecoded('systemId')
 	public authorID: Buffer;
 
 	/**
@@ -425,26 +255,24 @@ export default class FFLiMiiDataCore {
 	 */
 	public get createID(): Buffer {
 		return createIDParser.encode({
-			field0x0C: {
-				creationDate: this.creationDate,
-				isValid: this.isValid,
-				isNonUserMii: this.isNonUserMii,
-				isDSi: this.isDSi,
-				isNormalMii: this.isNormalMii,
-			},
-			mac: this.creatorMAC
+			creationTime: this.creationDate,
+			isValid: this.isValid,
+			nonUserMii: this.isNonUserMii,
+			dsMii: this.isDSi,
+			normalMii: this.isNormalMii,
+			consoleMAC: this.creatorMAC
 		});
 	}
 
 	public set createID(createID: Buffer) {
 		const decoded = createIDParser.parse(createID);
 
-		this.creationDate = decoded.field0x0C.creationDate;
-		this.isValid = decoded.field0x0C.isValid;
-		this.isNonUserMii = decoded.field0x0C.isNonUserMii;
-		this.isDSi = decoded.field0x0C.isDSi;
-		this.isNormalMii = decoded.field0x0C.isNormalMii;
-		this.creatorMAC = decoded.mac;
+		this.creationDate = decoded.creationTime;
+		this.isValid = decoded.isValid;
+		this.isNonUserMii = decoded.nonUserMii;
+		this.isDSi = decoded.dsMii;
+		this.isNormalMii = decoded.normalMii;
+		this.creatorMAC = decoded.consoleMAC;
 	}
 
 	/**
@@ -453,7 +281,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('field0x0C.creationDate')
+	@mapToDecoded('normalMii')
 	public creationDate: number;
 
 	/**
@@ -462,10 +290,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('field0x0C.isValid', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('dsMii')
 	public isValid: boolean;
 
 	/**
@@ -475,10 +300,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('field0x0C.isNonUserMii', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('nonUserMii')
 	public isNonUserMii: boolean;
 
 	/**
@@ -487,10 +309,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('field0x0C.isDSi', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('isValid')
 	public isDSi: boolean;
 
 	/**
@@ -499,10 +318,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('field0x0C.isNormalMii', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('creationTime')
 	public isNormalMii: boolean;
 
 	/**
@@ -511,323 +327,314 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('field0x10')
+	@mapToDecoded('consoleMAC')
 	public creatorMAC: Buffer;
 
 	/**
 	 * Denotes the Miis gender.
 	 */
-	@mapToDecoded('field0x18.sex')
+	@mapToDecoded('gender')
 	public gender: GENDER;
 
 	/**
 	 * Denotes the Miis birth month.
 	 */
-	@mapToDecoded('field0x18.birthMonth')
+	@mapToDecoded('birthMonth')
 	public birthMonth: number;
 
 	/**
 	 * Denotes the Miis birth day.
 	 */
-	@mapToDecoded('field0x18.birthDay')
+	@mapToDecoded('birthDay')
 	public birthDay: number;
 
 	/**
 	 * Denotes the Miis shirt color.
 	 */
-	@mapToDecoded('field0x18.favoriteColor')
+	@mapToDecoded('favoriteColor')
 	public favoriteColor: FAVORITE_COLOR;
 
 	/**
 	 * If set, this Mii is considered a users "favorite".
 	 */
-	@mapToDecoded('field0x18.isFavorite', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('favorite')
 	public favorite: boolean;
 
 	/**
 	 * Mii name. UTF-16 encoded, up to 10 characters with "0000" padding
 	 */
-	@mapToDecoded('field0x1A')
+	@mapToDecoded('miiName')
 	public name: string;
 
 	/**
 	 * Height of the Mii
 	 */
-	@mapToDecoded('field0x2E.height')
+	@mapToDecoded('height')
 	public height: number;
 
 	/**
 	 * Thickness of the Mii
 	 */
-	@mapToDecoded('field0x2E.width')
+	@mapToDecoded('build')
 	public build: number;
 
 	/**
 	 * If set, the Mii cannot be shared via StreetPass. If the Mii has "isNormalMii",
 	 * it MUST have this flag set. Special Miis are not permitted to be shared.
 	 */
-	@mapToDecoded('field0x30.disableSharing', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('disableSharing')
 	public localOnly: boolean;
 
 	/**
 	 * Mii head shape ID.
 	 */
-	@mapToDecoded('field0x30.faceShape')
+	@mapToDecoded('faceType')
 	public faceType: number;
 
 	/**
 	 * Mii skin color ID.
 	 */
-	@mapToDecoded('field0x30.skinColor')
+	@mapToDecoded('skinColor')
 	public faceColor: number;
 
 	/**
 	 * Mii wrinkles type ID.
 	 */
-	@mapToDecoded('field0x31.wrinkles')
+	@mapToDecoded('wrinklesType')
 	public faceTex: number;
 
 	/**
 	 * Mii makeup type ID.
 	 */
-	@mapToDecoded('field0x31.makeup')
+	@mapToDecoded('makeupType')
 	public faceMake: number;
 
 	/**
 	 * Mii hair type ID.
 	 */
-	@mapToDecoded('field0x32')
+	@mapToDecoded('hairType')
 	public hairType: number;
 
 	/**
 	 * Mii hair color ID.
 	 */
-	@mapToDecoded('field0x33.hairColor')
+	@mapToDecoded('hairColor')
 	public hairColor: number;
 
 	/**
 	 * If set, mirror the Miis hair.
 	 */
-	@mapToDecoded('field0x33.flipHair', {
-		get: (value: unknown) => !!value,
-		set: (value: unknown) => value ? 1 : 0
-	})
+	@mapToDecoded('flipHair')
 	public hairFlip: boolean;
 
 	/**
 	 * Mii eye type ID.
 	 */
-	@mapToDecoded('field0x34.eyeStyle')
+	@mapToDecoded('eyeType')
 	public eyeType: number;
 
 	/**
 	 * Mii eye color ID.
 	 */
-	@mapToDecoded('field0x34.eyeColor')
+	@mapToDecoded('eyeColor')
 	public eyeColor: number;
 
 	/**
 	 * Mii eye scale.
 	 */
-	@mapToDecoded('field0x34.eyeScale')
+	@mapToDecoded('eyeScale')
 	public eyeScale: number;
 
 	/**
 	 * Mii eye height.
 	 */
-	@mapToDecoded('field0x34.eyeYScale')
+	@mapToDecoded('eyeVerticalStretch')
 	public eyeAspect: number;
 
 	/**
 	 * Mii eye rotation amount.
 	 */
-	@mapToDecoded('field0x34.eyeRotation')
+	@mapToDecoded('eyeRotation')
 	public eyeRotate: number;
 
 	/**
 	 * Mii eye X position.
 	 */
-	@mapToDecoded('field0x34.eyeXSpacing')
+	@mapToDecoded('eyeSpacing')
 	public eyeX: number;
 
 	/**
 	 * Mii eye Y position.
 	 */
-	@mapToDecoded('field0x34.eyeYPosition')
+	@mapToDecoded('eyeYPosition')
 	public eyeY: number;
 
 	/**
 	 * Mii eyebrow type ID.
 	 */
-	@mapToDecoded('field0x38.eyebrowStyle')
+	@mapToDecoded('eyebrowType')
 	public eyebrowType: number;
 
 	/**
 	 * Mii eyebrow color ID.
 	 */
-	@mapToDecoded('field0x38.eyebrowColor')
+	@mapToDecoded('eyebrowColor')
 	public eyebrowColor: number;
 
 	/**
 	 * Mii eyebrow scale.
 	 */
-	@mapToDecoded('field0x38.eyebrowScale')
+	@mapToDecoded('eyebrowScale')
 	public eyebrowScale: number;
 
 	/**
 	 * Mii eyebrow height.
 	 */
-	@mapToDecoded('field0x38.eyebrowYScale')
+	@mapToDecoded('eyebrowVerticalStretch')
 	public eyebrowAspect: number;
 
 	/**
 	 * Mii eyebrow rotation amount.
 	 */
-	@mapToDecoded('field0x38.eyebrowRotation')
+	@mapToDecoded('eyebrowRotation')
 	public eyebrowRotate: number;
 
 	/**
 	 * Mii eyebrow X position.
 	 */
-	@mapToDecoded('field0x38.eyebrowXSpacing')
+	@mapToDecoded('eyebrowSpacing')
 	public eyebrowX: number;
 
 	/**
 	 * Mii eyebrow Y position.
 	 */
-	@mapToDecoded('field0x38.eyebrowYPosition')
+	@mapToDecoded('eyebrowYPosition')
 	public eyebrowY: number;
 
 	/**
 	 * Mii nose type ID.
 	 */
-	@mapToDecoded('field0x3C.noseStyle')
+	@mapToDecoded('noseType')
 	public noseType: number;
 
 	/**
 	 * Mii nose scale.
 	 */
-	@mapToDecoded('field0x3C.noseScale')
+	@mapToDecoded('noseScale')
 	public noseScale: number;
 
 	/**
 	 * Mii nose Y position.
 	 */
-	@mapToDecoded('field0x3C.noseYPosition')
+	@mapToDecoded('noseYPosition')
 	public noseY: number;
 
 	/**
 	 * Mii mouth type ID.
 	 */
-	@mapToDecoded('field0x3E.mouthStyle')
+	@mapToDecoded('mouthType')
 	public mouthType: number;
 
 	/**
 	 * Mii mouth color ID.
 	 */
-	@mapToDecoded('field0x3E.mouthColor')
+	@mapToDecoded('mouthColor')
 	public mouthColor: number;
 
 	/**
 	 * Mii mouth scale.
 	 */
-	@mapToDecoded('field0x3E.mouthScale')
+	@mapToDecoded('mouthScale')
 	public mouthScale: number;
 
 	/**
 	 * Mii mouth height.
 	 */
-	@mapToDecoded('field0x3E.mouthYScale')
+	@mapToDecoded('mouthHorizontalStretch')
 	public mouthAspect: number;
 
 	/**
 	 * Mii mouth Y position.
 	 */
-	@mapToDecoded('field0x40.mouthYPosition')
+	@mapToDecoded('mouthYPosition')
 	public mouthY: number;
 
 	/**
 	 * Mii mustache type ID.
 	 */
-	@mapToDecoded('field0x40.mustacheStyle')
+	@mapToDecoded('mustacheType')
 	public mustacheType: number;
 
 	/**
 	 * Mii beard type ID.
 	 */
-	@mapToDecoded('field0x42.beardStyle')
+	@mapToDecoded('beardType')
 	public beardType: number;
 
 	/**
 	 * Mii facial hair color ID. Affects both beard and mustache.
 	 */
-	@mapToDecoded('field0x42.beardColor')
+	@mapToDecoded('facialHairColor')
 	public beardColor: number;
 
 	/**
 	 * Mii mustache scale. Despite the name, this does not affect the beard in any way.
 	 */
-	@mapToDecoded('field0x42.mustacheScale')
+	@mapToDecoded('mustacheScale')
 	public beardScale: number;
 
 	/**
 	 * Mii mustache Y position. Despite the name, this does not affect the beard in any way.
 	 */
-	@mapToDecoded('field0x42.mustacheYPosition')
+	@mapToDecoded('mustacheYPosition')
 	public beardY: number;
 
 	/**
 	 * Mii glasses type ID.
 	 */
-	@mapToDecoded('field0x44.glassesStyle')
+	@mapToDecoded('glassesType')
 	public glassType: number;
 
 	/**
 	 * Mii glasses color ID.
 	 */
-	@mapToDecoded('field0x44.glassesColor')
+	@mapToDecoded('glassesColor')
 	public glassColor: number;
 
 	/**
 	 * Mii glasses scale.
 	 */
-	@mapToDecoded('field0x44.glassesScale')
+	@mapToDecoded('glassesScale')
 	public glassScale: number;
 
 	/**
 	 * Mii glasses Y position.
 	 */
-	@mapToDecoded('field0x44.glassesYPosition')
+	@mapToDecoded('glassesYPosition')
 	public glassY: number;
 
 	/**
 	 * If set, the Miis mole is visible.
 	 */
-	@mapToDecoded('field0x46.enableMole')
+	@mapToDecoded('moleEnabled')
 	public moleType: MOLE_TYPE;
 
 	/**
 	 * Mii mole scale.
 	 */
-	@mapToDecoded('field0x46.moleScale')
+	@mapToDecoded('moleScale')
 	public moleScale: number;
 
 	/**
 	 * Mii mole X position.
 	 */
-	@mapToDecoded('field0x46.moleXPosition')
+	@mapToDecoded('moleXPosition')
 	public moleX: number;
 
 	/**
 	 * Mii mole Y position.
 	 */
-	@mapToDecoded('field0x46.moleYPosition')
+	@mapToDecoded('moleYPosition')
 	public moleY: number;
 
 	/**
