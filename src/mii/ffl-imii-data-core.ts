@@ -278,7 +278,7 @@ export default class FFLiMiiDataCore {
 	}
 
 	/**
-	 * The date the Mii was created, in seconds since 01/01/2010 00:00:00.
+	 * The date the Mii was created, in seconds divided by 2, since 01/01/2010 00:00:00.
 	 * This is part of the "createID" in the original implementation, and
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
