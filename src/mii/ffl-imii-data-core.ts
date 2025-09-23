@@ -54,6 +54,7 @@ export enum MOLE_TYPE {
 
 // * Names are taken straight from https://github.com/PretendoNetwork/mii-js
 const coreParser = new BinaryParser()
+	.endianness('little')
 	.uint8('version')
 	.booleanBit('allowCopying')
 	.booleanBit('profanityFlag')
@@ -137,7 +138,6 @@ const coreParser = new BinaryParser()
 	.bit5('moleYPosition');
 
 const createIDParser = new BinaryParser()
-	.endianness('big')
 	.booleanBit('normalMii')
 	.booleanBit('dsMii')
 	.booleanBit('nonUserMii')

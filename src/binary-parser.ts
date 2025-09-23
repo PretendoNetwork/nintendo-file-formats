@@ -61,7 +61,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	}
 
 	/**
-	 * Sets the endianness for all values moving forward. Parser is little-endian by default
+	 * Sets the endianness for all values moving forward. Parser is big-endian by default
 	 *
 	 * @param endianness - The new endianness
 	 * @returns The current `BinaryParser` instance
@@ -711,6 +711,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		const stream = new BitStream(data, data.byteOffset, data.byteLength);
 		const result: Record<string, unknown> = {};
 
+		stream.bigEndian = true; // * Make this match binary-parser, BE by default
+
 		for (const command of this.commands) {
 			if (command.type === 'set_endianness') {
 				stream.bigEndian = command.endianness === 'big' ? true : false;
@@ -838,6 +840,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		const out = Buffer.alloc(this.size());
 		const stream = new BitStream(out, out.byteOffset, out.byteLength);
 		const parsedKeys = Object.keys(parsed);
+
+		stream.bigEndian = true; // * Make this match binary-parser, BE by default
 
 		for (const command of this.commands) {
 			if ('name' in command && !parsedKeys.includes(command.name)) {
