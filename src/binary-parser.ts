@@ -15,7 +15,7 @@ import { BitStream } from 'bit-buffer';
 // TODO - Remove all the "unknown" usage? Seems kinda smelly
 // TODO - Support nested structures? We don't need it right now but might be nice to have
 
-type FieldType =
+type CommandType =
 	| { type: 'set_endianness'; endianness: 'big' | 'little'; bits: 0; }
 	| { type: 'check_min'; value: number; bits: 0; }
 	| { type: 'check_max'; value: number; bits: 0; }
@@ -48,7 +48,7 @@ type StringFieldOptions = {
  * Custom structure parser with an API aimed at matching `binary-parser`, with additions. Uses `bit-buffer` under the hood
  */
 export default class BinaryParser<T extends Record<string, any>> { // eslint-disable-line @typescript-eslint/no-explicit-any
-	private structure: FieldType[] = [];
+	private commands: CommandType[] = [];
 	private latestField: {
 		name: string;
 		value: unknown;
@@ -68,7 +68,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public endianness(endianness: 'big' | 'little'): this {
-		this.structure.push({
+		this.commands.push({
 			type: 'set_endianness',
 			endianness: endianness,
 			bits: 0
@@ -96,7 +96,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public bitN<K extends string>(name: K, bits: number, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'bits',
 			name: name,
 			...(options && { options }),
@@ -113,7 +113,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public booleanBit<K extends string>(name: K): BinaryParser<T & { [P in K]: boolean }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'boolean_bit',
 			name: name,
 			bits: 1
@@ -459,7 +459,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			...(options && { options }),
@@ -476,7 +476,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			endianness: 'current',
@@ -494,7 +494,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint16le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			endianness: 'little',
@@ -512,7 +512,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint16be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			endianness: 'big',
@@ -530,7 +530,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			endianness: 'current',
@@ -548,7 +548,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint32le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			endianness: 'little',
@@ -566,7 +566,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'uint',
 			name: name,
 			endianness: 'big',
@@ -594,7 +594,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public skipBits(length: number): this {
-		this.structure.push({
+		this.commands.push({
 			type: 'skip',
 			bits: length
 		});
@@ -609,7 +609,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public buffer<K extends string>(name: K, options: BufferFieldOptions): BinaryParser<T & { [P in K]: Buffer }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'buffer',
 			name: name,
 			length: options.length,
@@ -626,7 +626,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public string<K extends string>(name: K, options: StringFieldOptions): BinaryParser<T & { [P in K]: string }> {
-		this.structure.push({
+		this.commands.push({
 			type: 'string',
 			name: name,
 			length: options.length,
@@ -645,7 +645,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public min(value: number): this {
-		this.structure.push({
+		this.commands.push({
 			type: 'check_min',
 			value: value,
 			bits: 0
@@ -662,7 +662,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public max(value: number): this {
-		this.structure.push({
+		this.commands.push({
 			type: 'check_max',
 			value: value,
 			bits: 0
@@ -680,7 +680,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public range(min: number, max: number): this {
-		this.structure.push({
+		this.commands.push({
 			type: 'check_range',
 			min: min,
 			max: max,
@@ -698,7 +698,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public validate(callback: (parsed: T) => void): this {
-		this.structure.push({
+		this.commands.push({
 			type: 'custom_validate',
 			callback: callback,
 			bits: 0
@@ -717,44 +717,44 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		const stream = new BitStream(data, data.byteOffset, data.byteLength);
 		const result: Record<string, unknown> = {};
 
-		for (const data of this.structure) {
-			if (data.type === 'set_endianness') {
-				stream.bigEndian = data.endianness === 'big' ? true : false;
+		for (const command of this.commands) {
+			if (command.type === 'set_endianness') {
+				stream.bigEndian = command.endianness === 'big' ? true : false;
 			}
 
-			if (data.type === 'skip') {
-				stream.index += data.bits;
+			if (command.type === 'skip') {
+				stream.index += command.bits;
 				continue;
 			}
 
-			if (data.type === 'custom_validate') {
-				data.callback(result as T);
+			if (command.type === 'custom_validate') {
+				command.callback(result as T);
 				continue;
 			}
 
-			if (data.type === 'check_min') {
-				if (this.latestField.value as number < data.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.value}`);
+			if (command.type === 'check_min') {
+				if (this.latestField.value as number < command.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (data.type === 'check_max') {
-				if (this.latestField.value as number > data.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.value}`);
+			if (command.type === 'check_max') {
+				if (this.latestField.value as number > command.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (data.type === 'check_range') {
-				if (this.latestField.value as number < data.min) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.min}`);
+			if (command.type === 'check_range') {
+				if (this.latestField.value as number < command.min) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.min}`);
 				}
 
-				if (this.latestField.value as number > data.max) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.max}`);
+				if (this.latestField.value as number > command.max) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.max}`);
 				}
 
 				continue;
@@ -762,50 +762,50 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 
 			let value: unknown;
 
-			if (data.type === 'bits') {
-				value = stream.readBits(data.bits);
+			if (command.type === 'bits') {
+				value = stream.readBits(command.bits);
 			}
 
-			if (data.type === 'boolean_bit') {
+			if (command.type === 'boolean_bit') {
 				value = !!stream.readBits(1);
 			}
 
-			if (data.type === 'uint') {
+			if (command.type === 'uint') {
 				const currentEndianness = stream.bigEndian;
 
-				if (data.bits !== 8 && data.endianness !== 'current') {
-					stream.bigEndian = data.endianness === 'big' ? true : false;
+				if (command.bits !== 8 && command.endianness !== 'current') {
+					stream.bigEndian = command.endianness === 'big' ? true : false;
 				}
 
-				value = data.bits === 8 ? stream.readUint8() : data.bits === 16 ? stream.readUint16() : stream.readUint32();
+				value = command.bits === 8 ? stream.readUint8() : command.bits === 16 ? stream.readUint16() : stream.readUint32();
 
 				stream.bigEndian = currentEndianness;
 			}
 
-			if (data.type === 'buffer') {
-				value = Buffer.from(stream.readArrayBuffer(data.length));
+			if (command.type === 'buffer') {
+				value = Buffer.from(stream.readArrayBuffer(command.length));
 			}
 
-			if (data.type === 'string') {
-				value = Buffer.from(stream.readArrayBuffer(data.length)).toString(data.encoding);
+			if (command.type === 'string') {
+				value = Buffer.from(stream.readArrayBuffer(command.length)).toString(command.encoding);
 			}
 
-			if ('name' in data) {
-				if ('options' in data && 'min' in data.options!) {
-					if (value as number < data.options.min!) {
-						throw new Error(`Field '${data.name}' is invalid. Value ${value} is less than ${data.options.min!}`);
+			if ('name' in command) {
+				if ('options' in command && 'min' in command.options!) {
+					if (value as number < command.options.min!) {
+						throw new Error(`Field '${command.name}' is invalid. Value ${value} is less than ${command.options.min!}`);
 					}
 				}
 
-				if ('options' in data && 'max' in data.options!) {
-					if (value as number > data.options.max!) {
-						throw new Error(`Field '${data.name}' is invalid. Value ${value} is greater than ${data.options.max!}`);
+				if ('options' in command && 'max' in command.options!) {
+					if (value as number > command.options.max!) {
+						throw new Error(`Field '${command.name}' is invalid. Value ${value} is greater than ${command.options.max!}`);
 					}
 				}
 
-				result[data.name] = value;
+				result[command.name] = value;
 				this.latestField = {
-					name: data.name,
+					name: command.name,
 					value: value
 				};
 			}
@@ -845,91 +845,91 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		const stream = new BitStream(out, out.byteOffset, out.byteLength);
 		const parsedKeys = Object.keys(parsed);
 
-		for (const data of this.structure) {
-			if ('name' in data && !parsedKeys.includes(data.name)) {
-				throw new Error(`Failed to find data for field ${data.name}`);
+		for (const command of this.commands) {
+			if ('name' in command && !parsedKeys.includes(command.name)) {
+				throw new Error(`Failed to find data for field ${command.name}`);
 			}
 
-			if (data.type === 'set_endianness') {
-				stream.bigEndian = data.endianness === 'big' ? true : false;
+			if (command.type === 'set_endianness') {
+				stream.bigEndian = command.endianness === 'big' ? true : false;
 			}
 
-			if (data.type === 'skip') {
-				stream.index += data.bits;
+			if (command.type === 'skip') {
+				stream.index += command.bits;
 				continue;
 			}
 
-			if (data.type === 'custom_validate') {
-				data.callback(parsed);
+			if (command.type === 'custom_validate') {
+				command.callback(parsed);
 				continue;
 			}
 
-			if (data.type === 'check_min') {
-				if (this.latestField.value as number < data.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.value}`);
+			if (command.type === 'check_min') {
+				if (this.latestField.value as number < command.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (data.type === 'check_max') {
-				if (this.latestField.value as number > data.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.value}`);
+			if (command.type === 'check_max') {
+				if (this.latestField.value as number > command.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (data.type === 'check_range') {
-				if (this.latestField.value as number < data.min) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.min}`);
+			if (command.type === 'check_range') {
+				if (this.latestField.value as number < command.min) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.min}`);
 				}
 
-				if (this.latestField.value as number > data.max) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.max}`);
+				if (this.latestField.value as number > command.max) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.max}`);
 				}
 
 				continue;
 			}
 
-			if (data.type === 'bits') {
-				stream.writeBits(parsed[data.name] as number, data.bits);
+			if (command.type === 'bits') {
+				stream.writeBits(parsed[command.name] as number, command.bits);
 			}
 
-			if (data.type === 'boolean_bit') {
-				stream.writeBits(parsed[data.name] ? 1 : 0, 1);
+			if (command.type === 'boolean_bit') {
+				stream.writeBits(parsed[command.name] ? 1 : 0, 1);
 			}
 
-			if (data.type === 'uint') {
+			if (command.type === 'uint') {
 				const currentEndianness = stream.bigEndian;
 
-				if (data.bits !== 8 && data.endianness !== 'current') {
-					stream.bigEndian = data.endianness === 'big' ? true : false;
+				if (command.bits !== 8 && command.endianness !== 'current') {
+					stream.bigEndian = command.endianness === 'big' ? true : false;
 				}
 
-				const value = parsed[data.name] as number;
+				const value = parsed[command.name] as number;
 
-				data.bits === 8 ? stream.writeUint8(value) : data.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
+				command.bits === 8 ? stream.writeUint8(value) : command.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
 
 				stream.bigEndian = currentEndianness;
 			}
 
-			if (data.type === 'buffer') {
-				(parsed[data.name] as Buffer).forEach(byte => stream.writeUint8(byte));
+			if (command.type === 'buffer') {
+				(parsed[command.name] as Buffer).forEach(byte => stream.writeUint8(byte));
 			}
 
-			if (data.type === 'string') {
-				const stringBuffer = Buffer.from(parsed[data.name] as string, data.encoding);
-				const terminatedBuffer = Buffer.alloc(data.length);
+			if (command.type === 'string') {
+				const stringBuffer = Buffer.from(parsed[command.name] as string, command.encoding);
+				const terminatedBuffer = Buffer.alloc(command.length);
 
 				terminatedBuffer.set(stringBuffer);
 				terminatedBuffer.forEach(byte => stream.writeUint8(byte));
 			}
 
-			if ('name' in data) {
+			if ('name' in command) {
 				this.latestField = {
-					name: data.name,
-					value: parsed[data.name]
+					name: command.name,
+					value: parsed[command.name]
 				};
 			}
 		}
@@ -965,7 +965,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	public size(): number {
 		let bits = 0;
 
-		for (const data of this.structure) {
+		for (const data of this.commands) {
 			bits += data.bits;
 		}
 
