@@ -24,10 +24,8 @@ type CommandType =
 	| { type: 'skip'; bits: number; }
 	| { type: 'bits'; name: string; options?: NumberFieldOptions; bits: number; }
 	| { type: 'boolean_bit'; name: string; bits: 1; }
-	| { type: 'uint'; name: string; options?: NumberFieldOptions; bits: 8; }
-	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
-	| { type: 'int'; name: string; options?: NumberFieldOptions; bits: 8; }
-	| { type: 'int'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
+	| { type: 'int'; name: string; signed: boolean; options?: NumberFieldOptions; bits: 8; }
+	| { type: 'int'; name: string; signed: boolean; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
 	| { type: 'buffer'; name: string; length: number; bits: number; }
 	| { type: 'string'; name: string; length: number; encoding: BufferEncoding; bits: number; };
 
@@ -460,8 +458,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			...(options && { options }),
 			bits: 8
 		});
@@ -479,6 +478,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			...(options && { options }),
 			bits: 8
 		});
@@ -494,8 +494,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 16
@@ -512,8 +513,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint16le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 16
@@ -530,8 +532,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint16be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 16
@@ -550,6 +553,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 16
@@ -568,6 +572,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 16
@@ -586,6 +591,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 16
@@ -602,8 +608,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 32
@@ -620,8 +627,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint32le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 32
@@ -638,8 +646,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 */
 	public uint32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.commands.push({
-			type: 'uint',
+			type: 'int',
 			name: name,
+			signed: false,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 32
@@ -658,6 +667,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 32
@@ -676,6 +686,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 32
@@ -694,6 +705,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 		this.commands.push({
 			type: 'int',
 			name: name,
+			signed: true,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 32
@@ -893,18 +905,6 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				value = !!stream.readBits(1);
 			}
 
-			if (command.type === 'uint') {
-				const currentEndianness = stream.bigEndian;
-
-				if (command.bits !== 8 && command.endianness !== 'current') {
-					stream.bigEndian = command.endianness === 'big' ? true : false;
-				}
-
-				value = command.bits === 8 ? stream.readUint8() : command.bits === 16 ? stream.readUint16() : stream.readUint32();
-
-				stream.bigEndian = currentEndianness;
-			}
-
 			if (command.type === 'int') {
 				const currentEndianness = stream.bigEndian;
 
@@ -912,7 +912,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 					stream.bigEndian = command.endianness === 'big' ? true : false;
 				}
 
-				value = command.bits === 8 ? stream.readInt8() : command.bits === 16 ? stream.readInt16() : stream.readInt32();
+				if (command.signed) {
+					value = command.bits === 8 ? stream.readInt8() : command.bits === 16 ? stream.readInt16() : stream.readInt32();
+				} else {
+					value = command.bits === 8 ? stream.readUint8() : command.bits === 16 ? stream.readUint16() : stream.readUint32();
+				}
 
 				stream.bigEndian = currentEndianness;
 			}
@@ -1037,20 +1041,6 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				stream.writeBits(parsed[command.name] ? 1 : 0, 1);
 			}
 
-			if (command.type === 'uint') {
-				const currentEndianness = stream.bigEndian;
-
-				if (command.bits !== 8 && command.endianness !== 'current') {
-					stream.bigEndian = command.endianness === 'big' ? true : false;
-				}
-
-				const value = parsed[command.name] as number;
-
-				command.bits === 8 ? stream.writeUint8(value) : command.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
-
-				stream.bigEndian = currentEndianness;
-			}
-
 			if (command.type === 'int') {
 				const currentEndianness = stream.bigEndian;
 
@@ -1060,7 +1050,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 
 				const value = parsed[command.name] as number;
 
-				command.bits === 8 ? stream.writeInt8(value) : command.bits === 16 ? stream.writeInt16(value) : stream.writeInt32(value);
+				if (command.signed) {
+					command.bits === 8 ? stream.writeInt8(value) : command.bits === 16 ? stream.writeInt16(value) : stream.writeInt32(value);
+				} else {
+					command.bits === 8 ? stream.writeUint8(value) : command.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
+				}
 
 				stream.bigEndian = currentEndianness;
 			}
