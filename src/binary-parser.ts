@@ -16,21 +16,42 @@ import { BitStream } from 'bit-buffer';
 // TODO - Support nested structures? We don't need it right now but might be nice to have
 
 type FieldType =
-	| { type: 'set_endianness'; endianness: 'big' | 'little'; bits: 0 }
-	| { type: 'skip'; bits: number }
-	| { type: 'bits'; name: string; bits: number }
-	| { type: 'boolean_bit'; name: string; bits: 1 }
-	| { type: 'uint'; name: string; bits: 8 }
-	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; bits: 16 }
-	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; bits: 32 }
-	| { type: 'buffer'; name: string; length: number; bits: number }
-	| { type: 'string'; name: string; length: number; encoding: BufferEncoding; bits: number };
+	| { type: 'set_endianness'; endianness: 'big' | 'little'; bits: 0; }
+	| { type: 'check_min'; value: number; bits: 0; }
+	| { type: 'check_max'; value: number; bits: 0; }
+	| { type: 'check_range'; min: number; max: number; bits: 0; }
+	| { type: 'skip'; bits: number; }
+	| { type: 'bits'; name: string; options?: NumberFieldOptions; bits: number; }
+	| { type: 'boolean_bit'; name: string; bits: 1; }
+	| { type: 'uint'; name: string; options?: NumberFieldOptions; bits: 8; }
+	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16; }
+	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 32; }
+	| { type: 'buffer'; name: string; length: number; bits: number; }
+	| { type: 'string'; name: string; length: number; encoding: BufferEncoding; bits: number; };
+
+type NumberFieldOptions = {
+	min?: number;
+	max?: number;
+};
+
+type BufferFieldOptions = {
+	length: number;
+};
+
+type StringFieldOptions = {
+	length: number;
+	encoding: BufferEncoding;
+};
 
 /**
  * Custom structure parser with an API aimed at matching `binary-parser`, with additions. Uses `bit-buffer` under the hood
  */
 export default class BinaryParser<T extends Record<string, any>> { // eslint-disable-line @typescript-eslint/no-explicit-any
 	private structure: FieldType[] = [];
+	private latestField: {
+		name: string;
+		value: unknown;
+	};
 
 	/**
 	 * Zod-like `z.infer` method, Do not call at runtime. Use `ReturnType<typeof BinaryParser.infer<typeof parser>>`
@@ -62,8 +83,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param bits - The number of bits to read
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bits<K extends string>(name: K, bits: number): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, bits);
+	public bits<K extends string>(name: K, bits: number, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, bits, options);
 	}
 
 	/**
@@ -73,10 +94,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param bits - The number of bits to read
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bitN<K extends string>(name: K, bits: number): BinaryParser<T & { [P in K]: number }> {
+	public bitN<K extends string>(name: K, bits: number, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'bits',
 			name: name,
+			...(options && { options }),
 			bits: bits
 		});
 
@@ -115,8 +137,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit1<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 1);
+	public bit1<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 1, options);
 	}
 
 	/**
@@ -125,8 +147,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit2<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 2);
+	public bit2<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 2, options);
 	}
 
 	/**
@@ -135,8 +157,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit3<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 3);
+	public bit3<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 3, options);
 	}
 
 	/**
@@ -145,8 +167,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit4<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 4);
+	public bit4<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 4, options);
 	}
 
 	/**
@@ -155,8 +177,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit5<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 5);
+	public bit5<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 5, options);
 	}
 
 	/**
@@ -165,8 +187,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit6<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 6);
+	public bit6<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 6, options);
 	}
 
 	/**
@@ -175,8 +197,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit7<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 7);
+	public bit7<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 7, options);
 	}
 
 	/**
@@ -185,8 +207,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit8<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 8);
+	public bit8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 8, options);
 	}
 
 	/**
@@ -195,8 +217,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit9<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 9);
+	public bit9<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 9, options);
 	}
 
 	/**
@@ -205,8 +227,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit10<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 10);
+	public bit10<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 10, options);
 	}
 
 	/**
@@ -215,8 +237,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit11<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 11);
+	public bit11<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 11, options);
 	}
 
 	/**
@@ -225,8 +247,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit12<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 12);
+	public bit12<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 12, options);
 	}
 
 	/**
@@ -235,8 +257,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit13<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 13);
+	public bit13<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 13, options);
 	}
 
 	/**
@@ -245,8 +267,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit14<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 14);
+	public bit14<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 14, options);
 	}
 
 	/**
@@ -255,8 +277,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit15<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 15);
+	public bit15<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 15, options);
 	}
 
 	/**
@@ -265,8 +287,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit16<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 16);
+	public bit16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 16, options);
 	}
 
 	/**
@@ -275,8 +297,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit17<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 17);
+	public bit17<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 17, options);
 	}
 
 	/**
@@ -285,8 +307,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit18<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 18);
+	public bit18<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 18, options);
 	}
 
 	/**
@@ -295,8 +317,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit19<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 19);
+	public bit19<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 19, options);
 	}
 
 	/**
@@ -305,8 +327,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit20<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 20);
+	public bit20<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 20, options);
 	}
 
 	/**
@@ -315,8 +337,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit21<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 21);
+	public bit21<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 21, options);
 	}
 
 	/**
@@ -325,8 +347,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit22<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 22);
+	public bit22<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 22, options);
 	}
 
 	/**
@@ -335,8 +357,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit23<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 23);
+	public bit23<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 23, options);
 	}
 
 	/**
@@ -345,8 +367,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit24<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 24);
+	public bit24<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 24, options);
 	}
 
 	/**
@@ -355,8 +377,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit25<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 25);
+	public bit25<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 25, options);
 	}
 
 	/**
@@ -365,8 +387,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit26<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 26);
+	public bit26<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 26, options);
 	}
 
 	/**
@@ -375,8 +397,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit27<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 27);
+	public bit27<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 27, options);
 	}
 
 	/**
@@ -385,8 +407,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit28<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 28);
+	public bit28<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 28, options);
 	}
 
 	/**
@@ -395,8 +417,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit29<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 29);
+	public bit29<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 29, options);
 	}
 
 	/**
@@ -405,8 +427,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit30<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 30);
+	public bit30<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 30, options);
 	}
 
 	/**
@@ -415,8 +437,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit31<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 31);
+	public bit31<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 31, options);
 	}
 
 	/**
@@ -425,8 +447,8 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public bit32<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
-		return this.bitN(name, 32);
+	public bit32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
+		return this.bitN(name, 32, options);
 	}
 
 	/**
@@ -435,10 +457,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint8<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
+			...(options && { options }),
 			bits: 8
 		});
 
@@ -451,11 +474,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint16<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
 			endianness: 'current',
+			...(options && { options }),
 			bits: 16
 		});
 
@@ -468,11 +492,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint16le<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint16le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
 			endianness: 'little',
+			...(options && { options }),
 			bits: 16
 		});
 
@@ -485,11 +510,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint16be<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint16be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
 			endianness: 'big',
+			...(options && { options }),
 			bits: 16
 		});
 
@@ -502,11 +528,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint32<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
 			endianness: 'current',
+			...(options && { options }),
 			bits: 32
 		});
 
@@ -519,11 +546,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint32le<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint32le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
 			endianness: 'little',
+			...(options && { options }),
 			bits: 32
 		});
 
@@ -536,11 +564,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public uint32be<K extends string>(name: K): BinaryParser<T & { [P in K]: number }> {
+	public uint32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
 		this.structure.push({
 			type: 'uint',
 			name: name,
 			endianness: 'big',
+			...(options && { options }),
 			bits: 32
 		});
 
@@ -578,7 +607,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public buffer<K extends string>(name: K, options: { length: number; }): BinaryParser<T & { [P in K]: Buffer }> {
+	public buffer<K extends string>(name: K, options: BufferFieldOptions): BinaryParser<T & { [P in K]: Buffer }> {
 		this.structure.push({
 			type: 'buffer',
 			name: name,
@@ -595,13 +624,66 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @param name - The name of the decoded field
 	 * @returns The current `BinaryParser` instance
 	 */
-	public string<K extends string>(name: K, options: { length: number; encoding: BufferEncoding; }): BinaryParser<T & { [P in K]: string }> {
+	public string<K extends string>(name: K, options: StringFieldOptions): BinaryParser<T & { [P in K]: string }> {
 		this.structure.push({
 			type: 'string',
 			name: name,
 			length: options.length,
 			encoding: options.encoding,
 			bits: options.length * 8
+		});
+
+		return this;
+	}
+
+	/**
+	 * Ensures the parsed value is greater than, or equal to, the provided value. Can also be set using `options.min`
+	 * when parsing a number
+	 *
+	 * @param value - Minimum value
+	 * @returns The current `BinaryParser` instance
+	 */
+	public min(value: number): this {
+		this.structure.push({
+			type: 'check_min',
+			value: value,
+			bits: 0
+		});
+
+		return this;
+	}
+
+	/**
+	 * Ensures the parsed value is less than, or equal to, the provided value. Can also be set using `options.max`
+	 * when parsing a number
+	 *
+	 * @param value - Maximum value
+	 * @returns The current `BinaryParser` instance
+	 */
+	public max(value: number): this {
+		this.structure.push({
+			type: 'check_max',
+			value: value,
+			bits: 0
+		});
+
+		return this;
+	}
+
+	/**
+	 * Ensures the parsed value is the given range, inclusive. Can also be set using both `options.min` and
+	 * `options.max` when parsing a number
+	 *
+	 * @param min - Minimum value
+	 * @param max - Maximum value
+	 * @returns The current `BinaryParser` instance
+	 */
+	public range(min: number, max: number): this {
+		this.structure.push({
+			type: 'check_range',
+			min: min,
+			max: max,
+			bits: 0
 		});
 
 		return this;
@@ -627,12 +709,42 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				continue;
 			}
 
+			if (data.type === 'check_min') {
+				if (this.latestField.value as number < data.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.value}`);
+				}
+
+				continue;
+			}
+
+			if (data.type === 'check_max') {
+				if (this.latestField.value as number > data.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.value}`);
+				}
+
+				continue;
+			}
+
+			if (data.type === 'check_range') {
+				if (this.latestField.value as number < data.min) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.min}`);
+				}
+
+				if (this.latestField.value as number > data.max) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.max}`);
+				}
+
+				continue;
+			}
+
+			let value: unknown;
+
 			if (data.type === 'bits') {
-				result[data.name] = stream.readBits(data.bits);
+				value = stream.readBits(data.bits);
 			}
 
 			if (data.type === 'boolean_bit') {
-				result[data.name] = !!stream.readBits(1);
+				value = !!stream.readBits(1);
 			}
 
 			if (data.type === 'uint') {
@@ -642,17 +754,37 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 					stream.bigEndian = data.endianness === 'big' ? true : false;
 				}
 
-				result[data.name] = data.bits === 8 ? stream.readUint8() : data.bits === 16 ? stream.readUint16() : stream.readUint32();
+				value = data.bits === 8 ? stream.readUint8() : data.bits === 16 ? stream.readUint16() : stream.readUint32();
 
 				stream.bigEndian = currentEndianness;
 			}
 
 			if (data.type === 'buffer') {
-				result[data.name] = Buffer.from(stream.readArrayBuffer(data.length));
+				value = Buffer.from(stream.readArrayBuffer(data.length));
 			}
 
 			if (data.type === 'string') {
-				result[data.name] = Buffer.from(stream.readArrayBuffer(data.length)).toString(data.encoding);
+				value = Buffer.from(stream.readArrayBuffer(data.length)).toString(data.encoding);
+			}
+
+			if ('name' in data) {
+				if ('options' in data && 'min' in data.options!) {
+					if (value as number < data.options.min!) {
+						throw new Error(`Field '${data.name}' is invalid. Value ${value} is less than ${data.options.min!}`);
+					}
+				}
+
+				if ('options' in data && 'max' in data.options!) {
+					if (value as number > data.options.max!) {
+						throw new Error(`Field '${data.name}' is invalid. Value ${value} is greater than ${data.options.max!}`);
+					}
+				}
+
+				result[data.name] = value;
+				this.latestField = {
+					name: data.name,
+					value: value
+				};
 			}
 		}
 
@@ -704,6 +836,34 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				continue;
 			}
 
+			if (data.type === 'check_min') {
+				if (this.latestField.value as number < data.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.value}`);
+				}
+
+				continue;
+			}
+
+			if (data.type === 'check_max') {
+				if (this.latestField.value as number > data.value) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.value}`);
+				}
+
+				continue;
+			}
+
+			if (data.type === 'check_range') {
+				if (this.latestField.value as number < data.min) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${data.min}`);
+				}
+
+				if (this.latestField.value as number > data.max) {
+					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${data.max}`);
+				}
+
+				continue;
+			}
+
 			if (data.type === 'bits') {
 				stream.writeBits(parsed[data.name] as number, data.bits);
 			}
@@ -736,6 +896,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 
 				terminatedBuffer.set(stringBuffer);
 				terminatedBuffer.forEach(byte => stream.writeUint8(byte));
+			}
+
+			if ('name' in data) {
+				this.latestField = {
+					name: data.name,
+					value: parsed[data.name]
+				};
 			}
 		}
 
