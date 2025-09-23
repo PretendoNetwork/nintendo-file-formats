@@ -179,7 +179,7 @@ export default class MiiStudioEncoder {
 	}
 
 	public createURLFromFFL(ffl: FFLStoreData | FFLiMiiDataOfficial | FFLiMiiDataCore, renderParams?: MiiStudioRenderParams): string {
-		const coreData = ffl instanceof FFLStoreData ? ffl.FFLiMiiDataOfficial.FFLiMiiDataCore : ffl instanceof FFLiMiiDataOfficial ? ffl.FFLiMiiDataCore : ffl;
+		const coreData = ffl instanceof FFLStoreData ? ffl.official.core : ffl instanceof FFLiMiiDataOfficial ? ffl.core : ffl;
 		const miiStudioData = {
 			facialHairColor: coreData.beardColor === 0 ? 8 : coreData.beardColor,
 			beardType: coreData.beardType,

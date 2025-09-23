@@ -7,7 +7,7 @@ export default class FFLStoreData {
 	/**
 	 * Internal Mii data and creator name
 	 */
-	public FFLiMiiDataOfficial = new FFLiMiiDataOfficial();
+	public official = new FFLiMiiDataOfficial();
 
 	/**
 	 * Unknown. Presumed padding
@@ -120,7 +120,7 @@ export default class FFLStoreData {
 	 * @returns encoded FFLStoreData
 	 */
 	public bytes(): Buffer {
-		const ffliMiiDataOfficial = this.FFLiMiiDataOfficial.bytes();
+		const ffliMiiDataOfficial = this.official.bytes();
 		const crcData = Buffer.concat([
 			ffliMiiDataOfficial,
 			this.padding ? this.padding : Buffer.alloc(2)
@@ -156,7 +156,7 @@ export default class FFLStoreData {
 			throw new Error(`Invalid ${this.constructor.name} CRC16. Expected ${expectedCRC}, got ${calculatedCRC}`);
 		}
 
-		this.FFLiMiiDataOfficial.parseFromBuffer(ffliMiiDataOfficial);
+		this.official.parseFromBuffer(ffliMiiDataOfficial);
 		this.padding = padding;
 		this.crc = expectedCRC;
 	}

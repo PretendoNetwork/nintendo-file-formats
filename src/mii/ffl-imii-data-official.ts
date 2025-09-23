@@ -7,7 +7,7 @@ export default class FFLiMiiDataOfficial {
 	/**
 	 * Internal Mii data
 	 */
-	public FFLiMiiDataCore = new FFLiMiiDataCore();
+	public core = new FFLiMiiDataCore();
 
 	/**
 	 * UTF-16 creator name
@@ -116,7 +116,7 @@ export default class FFLiMiiDataOfficial {
 	 */
 	public bytes(): Buffer {
 		return Buffer.concat([
-			this.FFLiMiiDataCore.bytes(),
+			this.core.bytes(),
 			Buffer.from(this.creatorName.padEnd(10, '\x00'), 'utf16le')
 		]);
 	}
@@ -131,7 +131,7 @@ export default class FFLiMiiDataOfficial {
 		const ffliMiiDataCore = this.stream.readBytes(0x48);
 		const creatorName = this.stream.readBytes(0x14).toString('utf16le');
 
-		this.FFLiMiiDataCore.parseFromBuffer(ffliMiiDataCore);
+		this.core.parseFromBuffer(ffliMiiDataCore);
 		this.creatorName = creatorName.replace(/\0.*$/, ''); // TODO - This is kinda ugly?
 	}
 }
