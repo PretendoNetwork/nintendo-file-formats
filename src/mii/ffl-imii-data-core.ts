@@ -283,7 +283,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('normalMii')
+	@mapToDecoded('creationTime')
 	public creationDate: number;
 
 	/**
@@ -292,7 +292,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('dsMii')
+	@mapToDecoded('isValid')
 	public isValid: boolean;
 
 	/**
@@ -311,7 +311,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('isValid')
+	@mapToDecoded('dsMii')
 	public isDSi: boolean;
 
 	/**
@@ -320,7 +320,7 @@ export default class FFLiMiiDataCore {
 	 * should not be relied on since more recent implementations of "createID"
 	 * set this to random data.
 	 */
-	@mapToDecoded('creationTime')
+	@mapToDecoded('normalMii')
 	public isNormalMii: boolean;
 
 	/**
