@@ -15,7 +15,7 @@ export default class Stream {
 		// TODO - This is a hack to support FileStream in the MSBT parser
 		if (bufferOrStream instanceof Buffer) {
 			this.buffer = bufferOrStream;
-		} else {
+		} else if (bufferOrStream instanceof Stream) {
 			this.buffer = bufferOrStream.buffer;
 		}
 	}
