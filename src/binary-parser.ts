@@ -25,8 +25,7 @@ type CommandType =
 	| { type: 'bits'; name: string; options?: NumberFieldOptions; bits: number; }
 	| { type: 'boolean_bit'; name: string; bits: 1; }
 	| { type: 'uint'; name: string; options?: NumberFieldOptions; bits: 8; }
-	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16; }
-	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 32; }
+	| { type: 'uint'; name: string; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
 	| { type: 'buffer'; name: string; length: number; bits: number; }
 	| { type: 'string'; name: string; length: number; encoding: BufferEncoding; bits: number; };
 
