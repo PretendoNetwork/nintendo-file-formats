@@ -1,14 +1,14 @@
 import BinaryParser from '@/binary-parser';
 import FileStream from '@/file-stream';
 
-enum LOCKED_REGION {
+export enum LOCKED_REGION {
 	NONE,
 	JPN,
 	USA,
 	EUR
 }
 
-enum CHARACTER_SET {
+export enum CHARACTER_SET {
 	JPN_USA_EUR,
 	CHN,
 	KOR,
@@ -18,19 +18,19 @@ enum CHARACTER_SET {
 type AUTHOR_TYPE = number; // TODO - What are these?
 
 // * Uses the codenames because 3DS doesn't play nice here
-enum DEVICE_ORIGIN {
+export enum DEVICE_ORIGIN {
 	RVL,
 	NTR,
 	CTR,
 	WUP_NX
 }
 
-enum GENDER {
+export enum GENDER {
 	MALE,
 	FEMALE
 }
 
-enum FAVORITE_COLOR {
+export enum FAVORITE_COLOR {
 	RED,
 	ORANGE,
 	YELLOW,
@@ -47,7 +47,7 @@ enum FAVORITE_COLOR {
 
 // TODO - All the other color/type enums
 
-enum MOLE_TYPE {
+export enum MOLE_TYPE {
 	DISABLED,
 	ENABLED
 }
