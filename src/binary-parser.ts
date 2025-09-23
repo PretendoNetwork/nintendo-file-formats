@@ -20,6 +20,7 @@ type FieldType =
 	| { type: 'check_min'; value: number; bits: 0; }
 	| { type: 'check_max'; value: number; bits: 0; }
 	| { type: 'check_range'; min: number; max: number; bits: 0; }
+	| { type: 'custom_validate'; callback: (parsed: any) => void; bits: 0; } // eslint-disable-line @typescript-eslint/no-explicit-any
 	| { type: 'skip'; bits: number; }
 	| { type: 'bits'; name: string; options?: NumberFieldOptions; bits: number; }
 	| { type: 'boolean_bit'; name: string; bits: 1; }
@@ -690,6 +691,23 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	}
 
 	/**
+	 * Defines a custom validation function. Can be used for complex checks across multiple fields. Expected
+	 * to throw errors when found
+	 *
+	 * @param callback - Custom validation function
+	 * @returns The current `BinaryParser` instance
+	 */
+	public validate(callback: (parsed: T) => void): this {
+		this.structure.push({
+			type: 'custom_validate',
+			callback: callback,
+			bits: 0
+		});
+
+		return this;
+	}
+
+	/**
 	 * Uses the current structure to parse `data`. Will throw any errors that occur
 	 *
 	 * @param data - Raw binary data to parse with the current structure
@@ -706,6 +724,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 
 			if (data.type === 'skip') {
 				stream.index += data.bits;
+				continue;
+			}
+
+			if (data.type === 'custom_validate') {
+				data.callback(result as T);
 				continue;
 			}
 
@@ -833,6 +856,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 
 			if (data.type === 'skip') {
 				stream.index += data.bits;
+				continue;
+			}
+
+			if (data.type === 'custom_validate') {
+				data.callback(parsed);
 				continue;
 			}
 
