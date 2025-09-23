@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import BinaryParser from '@/binary-parser';
 import FileStream from '@/file-stream';
 

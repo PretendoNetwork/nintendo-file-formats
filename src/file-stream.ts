@@ -1,4 +1,5 @@
-import fs from 'node:fs';
+const fs = typeof window === 'undefined' ? require('node:fs') : null;
+import { Buffer } from 'node:buffer';
 import Stream from '@/stream';
 
 export default class FileStream extends Stream {
@@ -6,6 +7,10 @@ export default class FileStream extends Stream {
 	private fileSize?: number;
 
 	constructor(fdOrPathOrBufferOrStream: number | string | Buffer | Stream) {
+		if ((typeof fdOrPathOrBufferOrStream === 'number' || typeof fdOrPathOrBufferOrStream === 'string') && !fs) {
+			throw new Error('File operations not supported in browser environment');
+		}
+
 		if (typeof fdOrPathOrBufferOrStream === 'number') {
 			super(Buffer.alloc(0));
 			this.fd = fdOrPathOrBufferOrStream;

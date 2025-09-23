@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import FileStream from '@/file-stream';
 import FFLiMiiDataCore from '@/mii/ffl-imii-data-core';
 

@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { BitStream } from 'bit-buffer';
 
 // * This exists solely because I really like the API of binary-parser, however it has 2 major issues:
@@ -847,7 +848,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns Object of parsed data
 	 */
 	public parse(data: Buffer): T {
-		const stream = new BitStream(data, data.byteOffset, data.byteLength);
+		const stream = new BitStream(data.buffer, data.byteOffset, data.byteLength);
 		const result: Record<string, unknown> = {};
 
 		stream.bigEndian = true; // * Make this match binary-parser, BE by default

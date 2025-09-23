@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer';
+
 export default class Stream {
 	protected buffer: Buffer;
 	protected offset = 0;
