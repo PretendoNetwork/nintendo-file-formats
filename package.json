@@ -52,6 +52,16 @@
 			"require": "./dist/cia.js",
 			"types": "./dist/cia.d.ts"
 		},
+		"./compression/cmp": {
+			"import": "./dist/compression/cmp.js",
+			"require": "./dist/compression/cmp.js",
+			"types": "./dist/compression/cmp.d.ts"
+		},
+		"./compression/yaz0": {
+			"import": "./dist/compression/yaz0.js",
+			"require": "./dist/compression/yaz0.js",
+			"types": "./dist/compression/yaz0.d.ts"
+		},
 		"./msbt": {
 			"import": "./dist/msbt.js",
 			"require": "./dist/msbt.js",
