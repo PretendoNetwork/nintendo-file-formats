@@ -11,6 +11,13 @@ export default class Stream {
 	 */
 	public bom: 'le' | 'be' = 'le';
 
+	/**
+	 * Allows for the storing of context-specific metdata. Useful in
+	 * cases such as passing context to sub-streams for files which
+	 * contain sub-files
+	 */
+	public metadata: Record<string, unknown> = {};
+
 	constructor(bufferOrStream: Buffer | Stream) {
 		// TODO - This is a hack to support FileStream in the MSBT parser
 		if (bufferOrStream instanceof Buffer) {
