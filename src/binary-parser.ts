@@ -23,12 +23,11 @@ type CommandType =
 	| { type: 'check_range'; min: number; max: number; }
 	| { type: 'custom_validate'; callback: (parsed: any) => void; } // eslint-disable-line @typescript-eslint/no-explicit-any
 	| { type: 'skip'; bits: number; }
-	| { type: 'bits'; name: string; options?: NumberFieldOptions; bits: number; }
-	| { type: 'boolean_bit'; name: string; bits: 1; }
-	| { type: 'int'; name: string; signed: boolean; options?: NumberFieldOptions; bits: 8; }
-	| { type: 'int'; name: string; signed: boolean; endianness: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 16 | 32; }
-	| { type: 'buffer'; name: string; length: number; bits: number; }
-	| { type: 'string'; name: string; length: number; encoding: BufferEncoding; bits: number; };
+	| BitsFieldCommand
+	| BooleanBitFieldCommand
+	| IntFieldCommand
+	| BufferFieldCommand
+	| StringFieldCommand;
 
 type NumberFieldOptions = {
 	min?: number;
@@ -43,6 +42,145 @@ type StringFieldOptions = {
 	length: number;
 	encoding: BufferEncoding;
 };
+
+class BitsFieldCommand {
+	public readonly type = 'bits';
+	public name: string;
+	public options?: NumberFieldOptions;
+	public bits: number;
+
+	constructor(settings: { name: string; options?: NumberFieldOptions, bits: number; }) {
+		this.name = settings.name;
+		this.options = settings.options;
+		this.bits = settings.bits;
+	}
+
+	parse(stream: BitStream): number {
+		return stream.readBits(this.bits);
+	}
+
+	encode(stream: BitStream, parsed: Record<string, unknown>): void {
+		stream.writeBits(parsed[this.name] as number, this.bits);
+	}
+}
+
+class BooleanBitFieldCommand {
+	public readonly type = 'boolean_bit';
+	public readonly bits = 1;
+	public name: string;
+
+	constructor(settings: { name: string; }) {
+		this.name = settings.name;
+	}
+
+	parse(stream: BitStream): boolean {
+		return !!stream.readBits(1);
+	}
+
+	encode(stream: BitStream, parsed: Record<string, unknown>): void {
+		stream.writeBits(parsed[this.name] ? 1 : 0, 1);
+	}
+}
+
+class IntFieldCommand {
+	public readonly type = 'int';
+	public name: string;
+	public signed: boolean;
+	public endianness: 'current' | 'big' | 'little';
+	public options?: NumberFieldOptions;
+	public bits: 8 | 16 | 32;
+
+	constructor(settings: { name: string; signed: boolean; endianness?: 'current' | 'big' | 'little'; options?: NumberFieldOptions; bits: 8 | 16 | 32; }) {
+		this.name = settings.name;
+		this.signed = settings.signed;
+		this.endianness = settings.endianness || 'current'; // * Only not set for 8 bit numbers, so this doesn't matter
+		this.options = settings.options;
+		this.bits = settings.bits;
+	}
+
+	parse(stream: BitStream): number {
+		const currentEndianness = stream.bigEndian;
+		let value: number;
+
+		if (this.bits !== 8 && this.endianness !== 'current') {
+			stream.bigEndian = this.endianness === 'big' ? true : false;
+		}
+
+		if (this.signed) {
+			value = this.bits === 8 ? stream.readInt8() : this.bits === 16 ? stream.readInt16() : stream.readInt32();
+		} else {
+			value = this.bits === 8 ? stream.readUint8() : this.bits === 16 ? stream.readUint16() : stream.readUint32();
+		}
+
+		stream.bigEndian = currentEndianness;
+
+		return value;
+	}
+
+	encode(stream: BitStream, parsed: Record<string, unknown>): void {
+		const currentEndianness = stream.bigEndian;
+
+		if (this.bits !== 8 && this.endianness !== 'current') {
+			stream.bigEndian = this.endianness === 'big' ? true : false;
+		}
+
+		const value = parsed[this.name] as number;
+
+		if (this.signed) {
+			this.bits === 8 ? stream.writeInt8(value) : this.bits === 16 ? stream.writeInt16(value) : stream.writeInt32(value);
+		} else {
+			this.bits === 8 ? stream.writeUint8(value) : this.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
+		}
+
+		stream.bigEndian = currentEndianness;
+	}
+}
+
+class BufferFieldCommand {
+	public readonly type = 'buffer';
+	public name: string;
+	public options: BufferFieldOptions;
+	public bits: number;
+
+	constructor(settings: { name: string; options: BufferFieldOptions; bits: number; }) {
+		this.name = settings.name;
+		this.options = settings.options;
+		this.bits = settings.bits;
+	}
+
+	parse(stream: BitStream): Buffer {
+		return Buffer.from(stream.readArrayBuffer(this.options.length));
+	}
+
+	encode(stream: BitStream, parsed: Record<string, unknown>): void {
+		(parsed[this.name] as Buffer).forEach(byte => stream.writeUint8(byte));
+	}
+}
+
+class StringFieldCommand {
+	public readonly type = 'string';
+	public name: string;
+	public options: StringFieldOptions;
+	public bits: number;
+
+	constructor(settings: { name: string; options: StringFieldOptions; bits: number; }) {
+		this.name = settings.name;
+		this.options = settings.options;
+		this.bits = settings.bits;
+	}
+
+	parse(stream: BitStream): string {
+		return Buffer.from(stream.readArrayBuffer(this.options.length)).toString(this.options.encoding);
+	}
+
+	encode(stream: BitStream, parsed: Record<string, unknown>): void {
+		const stringBuffer = Buffer.from(parsed[this.name] as string, this.options.encoding);
+		const terminatedBuffer = Buffer.alloc(this.options.length);
+
+		terminatedBuffer.set(stringBuffer);
+		terminatedBuffer.forEach(byte => stream.writeUint8(byte));
+	}
+}
 
 /**
  * Custom structure parser with an API aimed at matching `binary-parser`, with additions. Uses `bit-buffer` under the hood
@@ -95,12 +233,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public bitN<K extends string>(name: K, bits: number, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'bits',
+		this.commands.push(new BitsFieldCommand({
 			name: name,
 			...(options && { options }),
 			bits: bits
-		});
+		}));
 
 		return this;
 	}
@@ -112,11 +249,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public booleanBit<K extends string>(name: K): BinaryParser<T & { [P in K]: boolean }> {
-		this.commands.push({
-			type: 'boolean_bit',
-			name: name,
-			bits: 1
-		});
+		this.commands.push(new BooleanBitFieldCommand({
+			name: name
+		}));
 
 		return this;
 	}
@@ -458,13 +593,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			...(options && { options }),
 			bits: 8
-		});
+		}));
 
 		return this;
 	}
@@ -476,13 +610,12 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int8<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			...(options && { options }),
 			bits: 8
-		});
+		}));
 
 		return this;
 	}
@@ -494,14 +627,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 16
-		});
+		}));
 
 		return this;
 	}
@@ -513,14 +645,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint16le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 16
-		});
+		}));
 
 		return this;
 	}
@@ -532,14 +663,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint16be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 16
-		});
+		}));
 
 		return this;
 	}
@@ -551,14 +681,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int16<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 16
-		});
+		}));
 
 		return this;
 	}
@@ -570,14 +699,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int16le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 16
-		});
+		}));
 
 		return this;
 	}
@@ -589,14 +717,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int16be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 16
-		});
+		}));
 
 		return this;
 	}
@@ -608,14 +735,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 32
-		});
+		}));
 
 		return this;
 	}
@@ -627,14 +753,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint32le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 32
-		});
+		}));
 
 		return this;
 	}
@@ -646,14 +771,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public uint32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: false,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 32
-		});
+		}));
 
 		return this;
 	}
@@ -665,14 +789,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int32<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			endianness: 'current',
 			...(options && { options }),
 			bits: 32
-		});
+		}));
 
 		return this;
 	}
@@ -684,14 +807,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int32le<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			endianness: 'little',
 			...(options && { options }),
 			bits: 32
-		});
+		}));
 
 		return this;
 	}
@@ -703,14 +825,13 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public int32be<K extends string>(name: K, options?: NumberFieldOptions): BinaryParser<T & { [P in K]: number }> {
-		this.commands.push({
-			type: 'int',
+		this.commands.push(new IntFieldCommand({
 			name: name,
 			signed: true,
 			endianness: 'big',
 			...(options && { options }),
 			bits: 32
-		});
+		}));
 
 		return this;
 	}
@@ -747,12 +868,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public buffer<K extends string>(name: K, options: BufferFieldOptions): BinaryParser<T & { [P in K]: Buffer }> {
-		this.commands.push({
-			type: 'buffer',
+		this.commands.push(new BufferFieldCommand({
 			name: name,
-			length: options.length,
+			options: options,
 			bits: options.length * 8
-		});
+		}));
 
 		return this;
 	}
@@ -764,13 +884,11 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns The current `BinaryParser` instance
 	 */
 	public string<K extends string>(name: K, options: StringFieldOptions): BinaryParser<T & { [P in K]: string }> {
-		this.commands.push({
-			type: 'string',
+		this.commands.push(new StringFieldCommand({
 			name: name,
-			length: options.length,
-			encoding: options.encoding,
+			options: options,
 			bits: options.length * 8
-		});
+		}));
 
 		return this;
 	}
@@ -896,48 +1014,16 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				continue;
 			}
 
-			let value: unknown;
-
-			if (command.type === 'bits') {
-				value = stream.readBits(command.bits);
-			}
-
-			if (command.type === 'boolean_bit') {
-				value = !!stream.readBits(1);
-			}
-
-			if (command.type === 'int') {
-				const currentEndianness = stream.bigEndian;
-
-				if (command.bits !== 8 && command.endianness !== 'current') {
-					stream.bigEndian = command.endianness === 'big' ? true : false;
-				}
-
-				if (command.signed) {
-					value = command.bits === 8 ? stream.readInt8() : command.bits === 16 ? stream.readInt16() : stream.readInt32();
-				} else {
-					value = command.bits === 8 ? stream.readUint8() : command.bits === 16 ? stream.readUint16() : stream.readUint32();
-				}
-
-				stream.bigEndian = currentEndianness;
-			}
-
-			if (command.type === 'buffer') {
-				value = Buffer.from(stream.readArrayBuffer(command.length));
-			}
-
-			if (command.type === 'string') {
-				value = Buffer.from(stream.readArrayBuffer(command.length)).toString(command.encoding);
-			}
-
 			if ('name' in command) {
-				if ('options' in command && 'min' in command.options!) {
+				const value = command.parse(stream);
+
+				if ('options' in command && command.options && 'min' in command.options) {
 					if (value as number < command.options.min!) {
 						throw new Error(`Field '${command.name}' is invalid. Value ${value} is less than ${command.options.min!}`);
 					}
 				}
 
-				if ('options' in command && 'max' in command.options!) {
+				if ('options' in command && command.options && 'max' in command.options) {
 					if (value as number > command.options.max!) {
 						throw new Error(`Field '${command.name}' is invalid. Value ${value} is greater than ${command.options.max!}`);
 					}
@@ -1034,45 +1120,9 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 				continue;
 			}
 
-			if (command.type === 'bits') {
-				stream.writeBits(parsed[command.name] as number, command.bits);
-			}
-
-			if (command.type === 'boolean_bit') {
-				stream.writeBits(parsed[command.name] ? 1 : 0, 1);
-			}
-
-			if (command.type === 'int') {
-				const currentEndianness = stream.bigEndian;
-
-				if (command.bits !== 8 && command.endianness !== 'current') {
-					stream.bigEndian = command.endianness === 'big' ? true : false;
-				}
-
-				const value = parsed[command.name] as number;
-
-				if (command.signed) {
-					command.bits === 8 ? stream.writeInt8(value) : command.bits === 16 ? stream.writeInt16(value) : stream.writeInt32(value);
-				} else {
-					command.bits === 8 ? stream.writeUint8(value) : command.bits === 16 ? stream.writeUint16(value) : stream.writeUint32(value);
-				}
-
-				stream.bigEndian = currentEndianness;
-			}
-
-			if (command.type === 'buffer') {
-				(parsed[command.name] as Buffer).forEach(byte => stream.writeUint8(byte));
-			}
-
-			if (command.type === 'string') {
-				const stringBuffer = Buffer.from(parsed[command.name] as string, command.encoding);
-				const terminatedBuffer = Buffer.alloc(command.length);
-
-				terminatedBuffer.set(stringBuffer);
-				terminatedBuffer.forEach(byte => stream.writeUint8(byte));
-			}
-
 			if ('name' in command) {
+				command.encode(stream, parsed);
+
 				this.latestField = {
 					name: command.name,
 					value: parsed[command.name]
