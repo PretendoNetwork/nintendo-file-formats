@@ -202,6 +202,35 @@ export default class Stream {
 	}
 
 	/**
+	 * Reads a big-endian float16 (half) from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readHalfBE(): number {
+		const bytes = this.readBytes(2);
+		const uint16 = bytes.readUInt16BE();
+		return float16ToFloat32(uint16);
+	}
+
+	/**
+	 * Reads a big-endian float32 from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readFloatBE(): number {
+		return this.readBytes(4).readFloatBE();
+	}
+
+	/**
+	 * Reads a big-endian float64 (double) from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readDoubleBE(): number {
+		return this.readBytes(8).readDoubleBE();
+	}
+
+	/**
 	 * Reads a little-endian uint16 from the current offset
 	 *
 	 * @returns the read number
@@ -271,6 +300,35 @@ export default class Stream {
 	 */
 	public readInt64LE(): bigint {
 		return this.readBytes(8).readBigInt64LE();
+	}
+
+	/**
+	 * Reads a little-endian float16 (half) from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readHalfLE(): number {
+		const bytes = this.readBytes(2);
+		const uint16 = bytes.readUInt16LE();
+		return float16ToFloat32(uint16);
+	}
+
+	/**
+	 * Reads a little-endian float32 from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readFloatLE(): number {
+		return this.readBytes(4).readFloatLE();
+	}
+
+	/**
+	 * Reads a little-endian float64 (double) from the current offset
+	 *
+	 * @returns the read number
+	 */
+	public readDoubleLE(): number {
+		return this.readBytes(8).readDoubleLE();
 	}
 
 	/**
@@ -360,4 +418,77 @@ export default class Stream {
 	public readInt64(): bigint {
 		return this.bom === 'le' ? this.readInt64LE() : this.readInt64BE();
 	}
+
+	/**
+	 * Reads a float16 (half) from the current offset
+	 *
+	 * Uses the `bom` field to determine endianness
+	 *
+	 * @returns the read number
+	 */
+	public readHalf(): number {
+		return this.bom === 'le' ? this.readHalfLE() : this.readHalfBE();
+	}
+
+	/**
+	 * Reads a float32 from the current offset
+	 *
+	 * Uses the `bom` field to determine endianness
+	 *
+	 * @returns the read number
+	 */
+	public readFloat(): number {
+		return this.bom === 'le' ? this.readFloatLE() : this.readFloatBE();
+	}
+
+	/**
+	 * Reads a float64 (double) from the current offset
+	 *
+	 * Uses the `bom` field to determine endianness
+	 *
+	 * @returns the read number
+	 */
+	public readDouble(): number {
+		return this.bom === 'le' ? this.readDoubleLE() : this.readDoubleBE();
+	}
+
+	/**
+	 * Extracts a signed integer from a packed value
+	 *
+	 * @param value - The packed value to extract from
+	 * @param bitOffset - Starting bit position (0-based, from LSB)
+	 * @param bitLength - Number of bits to extract
+	 * @returns the extracted signed integer
+	 */
+	public extractSignedBits(value: number, bitOffset: number, bitLength: number): number {
+		const mask = (1 << bitLength) - 1;
+		let extracted = (value >> bitOffset) & mask;
+
+		const signBit = 1 << (bitLength - 1);
+		if (extracted & signBit) {
+			extracted |= ~mask;
+		}
+
+		return extracted;
+	}
+}
+
+function float16ToFloat32(uint16: number): number {
+	const sign = (uint16 & 0x8000) >> 15;
+	const exponent = (uint16 & 0x7C00) >> 10;
+	const fraction = uint16 & 0x03FF;
+
+	if (exponent === 0) {
+		if (fraction === 0) {
+			return sign ? -0 : 0;
+		}
+
+		return (sign ? -1 : 1) * Math.pow(2, -14) * (fraction / 1024);
+	}
+
+	if (exponent === 0x1F) {
+		return fraction ? NaN : (sign ? -Infinity : Infinity);
+	}
+
+	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + fraction / 1024);
 }
