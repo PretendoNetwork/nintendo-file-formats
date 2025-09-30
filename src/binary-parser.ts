@@ -214,10 +214,6 @@ class StringFieldCommand {
  */
 export default class BinaryParser<T extends object = Record<never, never>> { // eslint-disable-line @typescript-eslint/no-explicit-any
 	private commands: CommandType[] = [];
-	private latestField: {
-		name: string;
-		value: unknown;
-	};
 
 	/**
 	 * Zod-like `z.infer` method, Do not call at runtime. Use `ReturnType<typeof BinaryParser.infer<typeof parser>>`
@@ -995,6 +991,10 @@ export default class BinaryParser<T extends object = Record<never, never>> { // 
 	public parse(data: Buffer): Prettify<T> {
 		const stream = new BitStream(data.buffer as ArrayBuffer, data.byteOffset, data.byteLength); // TODO - Can this "as" be removed?
 		const result: Record<string, unknown> = {};
+		let latestField: {
+			name: string;
+			value: unknown;
+		} | undefined = undefined;
 
 		stream.bigEndian = true; // * Make this match binary-parser, BE by default
 
@@ -1013,29 +1013,29 @@ export default class BinaryParser<T extends object = Record<never, never>> { // 
 				continue;
 			}
 
-			if (command.type === 'check_min') {
-				if (this.latestField.value as number < command.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.value}`);
+			if (command.type === 'check_min' && latestField) {
+				if (latestField.value as number < command.value) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is less than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (command.type === 'check_max') {
-				if (this.latestField.value as number > command.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.value}`);
+			if (command.type === 'check_max' && latestField) {
+				if (latestField.value as number > command.value) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is greater than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (command.type === 'check_range') {
-				if (this.latestField.value as number < command.min) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.min}`);
+			if (command.type === 'check_range' && latestField) {
+				if (latestField.value as number < command.min) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is less than ${command.min}`);
 				}
 
-				if (this.latestField.value as number > command.max) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.max}`);
+				if (latestField.value as number > command.max) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is greater than ${command.max}`);
 				}
 
 				continue;
@@ -1057,7 +1057,7 @@ export default class BinaryParser<T extends object = Record<never, never>> { // 
 				}
 
 				result[command.name] = value;
-				this.latestField = {
+				latestField = {
 					name: command.name,
 					value: value
 				};
@@ -1097,6 +1097,10 @@ export default class BinaryParser<T extends object = Record<never, never>> { // 
 		const out = Buffer.alloc(this.size());
 		const stream = new BitStream(out, out.byteOffset, out.byteLength);
 		const parsedKeys = Object.keys(parsed);
+		let latestField: {
+			name: string;
+			value: unknown;
+		} | undefined = undefined;
 
 		stream.bigEndian = true; // * Make this match binary-parser, BE by default
 
@@ -1119,29 +1123,29 @@ export default class BinaryParser<T extends object = Record<never, never>> { // 
 				continue;
 			}
 
-			if (command.type === 'check_min') {
-				if (this.latestField.value as number < command.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.value}`);
+			if (command.type === 'check_min' && latestField) {
+				if (latestField.value as number < command.value) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is less than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (command.type === 'check_max') {
-				if (this.latestField.value as number > command.value) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.value}`);
+			if (command.type === 'check_max' && latestField) {
+				if (latestField.value as number > command.value) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is greater than ${command.value}`);
 				}
 
 				continue;
 			}
 
-			if (command.type === 'check_range') {
-				if (this.latestField.value as number < command.min) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is less than ${command.min}`);
+			if (command.type === 'check_range' && latestField) {
+				if (latestField.value as number < command.min) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is less than ${command.min}`);
 				}
 
-				if (this.latestField.value as number > command.max) {
-					throw new Error(`Field '${this.latestField.name}' is invalid. Value ${this.latestField.value} is greater than ${command.max}`);
+				if (latestField.value as number > command.max) {
+					throw new Error(`Field '${latestField.name}' is invalid. Value ${latestField.value} is greater than ${command.max}`);
 				}
 
 				continue;
@@ -1150,7 +1154,7 @@ export default class BinaryParser<T extends object = Record<never, never>> { // 
 			if ('name' in command) {
 				command.encode(stream, parsed);
 
-				this.latestField = {
+				latestField = {
 					name: command.name,
 					value: (parsed as Record<string, unknown>)[command.name]
 				};
