@@ -56,6 +56,31 @@
 			"require": "./dist/cia.cjs",
 			"types": "./dist/cia.d.ts"
 		},
+		"./mii": {
+			"import": "./dist/mii/index.js",
+			"require": "./dist/mii/index.cjs",
+			"types": "./dist/mii/index.d.ts"
+		},
+		"./mii/ffl-store-data": {
+			"import": "./dist/mii/ffl-store-data.js",
+			"require": "./dist/mii/ffl-store-data.cjs",
+			"types": "./dist/mii/ffl-store-data.d.ts"
+		},
+		"./mii/ffl-imii-data-official": {
+			"import": "./dist/mii/ffl-imii-data-official.js",
+			"require": "./dist/mii/ffl-imii-data-official.cjs",
+			"types": "./dist/mii/ffl-imii-data-official.d.ts"
+		},
+		"./mii/ffl-imii-data-core": {
+			"import": "./dist/mii/ffl-imii-data-core.js",
+			"require": "./dist/mii/ffl-imii-data-core.cjs",
+			"types": "./dist/mii/ffl-imii-data-core.d.ts"
+		},
+		"./mii/mii-studio-encoder": {
+			"import": "./dist/mii/mii-studio-encoder.js",
+			"require": "./dist/mii/mii-studio-encoder.cjs",
+			"types": "./dist/mii/mii-studio-encoder.d.ts"
+		},
 		"./msbt": {
 			"import": "./dist/msbt.js",
 			"require": "./dist/msbt.cjs",
