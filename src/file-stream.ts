@@ -1,13 +1,17 @@
-const fs = typeof window === 'undefined' ? require('node:fs') : null;
-import { Buffer } from 'node:buffer';
+import * as fsModule from 'node:fs'; // * This SHOULD get tree-shaken away during building?
+import { Buffer } from 'buffer';
 import Stream from '@/stream';
 
+const isBrowser = typeof window !== 'undefined';
+const fs = isBrowser ? null : fsModule;
+
 export default class FileStream extends Stream {
+	private fs: typeof import('node:fs') | null = null;
 	private fd?: number;
 	private fileSize?: number;
 
 	constructor(fdOrPathOrBufferOrStream: number | string | Buffer | Stream) {
-		if ((typeof fdOrPathOrBufferOrStream === 'number' || typeof fdOrPathOrBufferOrStream === 'string') && !fs) {
+		if ((typeof fdOrPathOrBufferOrStream === 'number' || typeof fdOrPathOrBufferOrStream === 'string') && isBrowser) {
 			throw new Error('File operations not supported in browser environment');
 		}
 
@@ -16,13 +20,13 @@ export default class FileStream extends Stream {
 			this.fd = fdOrPathOrBufferOrStream;
 		} else if (typeof fdOrPathOrBufferOrStream === 'string') {
 			super(Buffer.alloc(0));
-			this.fd = fs.openSync(fdOrPathOrBufferOrStream, 'r');
+			this.fd = fs!.openSync(fdOrPathOrBufferOrStream, 'r');
 		} else {
 			super(fdOrPathOrBufferOrStream);
 		}
 
 		if (this.fd) {
-			const stat = fs.fstatSync(this.fd);
+			const stat = fs!.fstatSync(this.fd);
 			this.fileSize = stat.size;
 		}
 	}
@@ -51,7 +55,7 @@ export default class FileStream extends Stream {
 
 		if (this.fd) {
 			read = Buffer.alloc(length);
-			fs.readSync(this.fd!, read, 0, length, this.offset);
+			fs!.readSync(this.fd!, read, 0, length, this.offset);
 		} else {
 			read = this.buffer.subarray(this.offset, this.offset + length);
 		}
@@ -70,8 +74,8 @@ export default class FileStream extends Stream {
 		if (this.fd && this.fileSize) {
 			this.buffer = Buffer.alloc(this.fileSize);
 
-			fs.readSync(this.fd, this.buffer, 0, this.fileSize, 0);
-			fs.closeSync(this.fd);
+			fs!.readSync(this.fd, this.buffer, 0, this.fileSize, 0);
+			fs!.closeSync(this.fd);
 
 			this.fd = undefined;
 		}
