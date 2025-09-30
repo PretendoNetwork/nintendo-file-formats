@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"strict": true,
 		"strictPropertyInitialization": false,
+		"skipLibCheck": true,
 		"sourceMap": true,
 		"declaration": true,
 		"resolveJsonModule": true,

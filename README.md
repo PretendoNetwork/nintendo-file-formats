@@ -57,7 +57,7 @@ Some classes support encoding the data back into a buffer. This is done through 
 - [x] Ticket. Does not decrypt title key
 - [ ] Encrypted title parts (`.app` files)
 - [ ] Title hashes (`.h3` files)
-- [ ] Mii data
+- [x] Mii data
 - [x] MSBT. Parses:
   - [x] LBL1
   - [x] ATR1
@@ -76,7 +76,7 @@ Some classes support encoding the data back into a buffer. This is done through 
 - [x] Ticket. Does not decrypt title key
 - [ ] Encrypted title parts (`.app` files)
 - [ ] Title hashes (`.h3` files)
-- [ ] Mii data
+- [x] Mii data
 - [ ] MSBT
 - [ ] BYML/BYAML
 - [ ] SARC
