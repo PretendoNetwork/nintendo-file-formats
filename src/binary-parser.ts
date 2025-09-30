@@ -848,7 +848,7 @@ export default class BinaryParser<T extends Record<string, any>> { // eslint-dis
 	 * @returns Object of parsed data
 	 */
 	public parse(data: Buffer): T {
-		const stream = new BitStream(data.buffer, data.byteOffset, data.byteLength);
+		const stream = new BitStream(data.buffer as ArrayBuffer, data.byteOffset, data.byteLength); // TODO - Can this "as" be removed?
 		const result: Record<string, unknown> = {};
 
 		stream.bigEndian = true; // * Make this match binary-parser, BE by default
