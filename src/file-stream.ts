@@ -6,7 +6,6 @@ const isBrowser = typeof window !== 'undefined';
 const fs = isBrowser ? null : fsModule;
 
 export default class FileStream extends Stream {
-	private fs: typeof import('node:fs') | null = null;
 	private fd?: number;
 	private fileSize?: number;
 
