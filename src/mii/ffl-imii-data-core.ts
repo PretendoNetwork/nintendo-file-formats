@@ -2,6 +2,10 @@ import { Buffer } from 'node:buffer';
 import BinaryParser from '@/binary-parser';
 import FileStream from '@/file-stream';
 
+/**
+ * Indicates what region a Mii is locked to. A region locked
+ * Mii cannot be shared outside of its region
+ */
 export enum LOCKED_REGION {
 	NONE,
 	JPN,
@@ -9,6 +13,10 @@ export enum LOCKED_REGION {
 	EUR
 }
 
+/**
+ * Indicates what character set (font) should be used for rendering
+ * Mii text, such as the creator name and Mii nickname
+ */
 export enum CHARACTER_SET {
 	JPN_USA_EUR,
 	CHN,
@@ -16,21 +24,58 @@ export enum CHARACTER_SET {
 	TWN
 }
 
+/**
+ * Unknown use
+ */
 type AUTHOR_TYPE = number; // TODO - What are these?
 
 // * Uses the codenames because 3DS doesn't play nice here
+
+/**
+ * Indicates what device the Mii was created on. Uses device codenames
+ * since "3DS" cannot be used as a key
+ */
 export enum DEVICE_ORIGIN {
+	/**
+	 * Mii was made on the Wii
+	 */
 	RVL,
+
+	/**
+	 * Mii was made on the DS/DSi
+	 */
 	NTR,
+
+	/**
+	 * Mii was made on the 3DS
+	 */
 	CTR,
-	WUP_NX
+
+	/**
+	 * Mii was made on the Wii U.
+	 * This value is shared with the Switch
+	 */
+	WUP,
+
+	/**
+	 * Mii was made on the Switch.
+	 * This value is shared with the Wii U
+	 */
+	NX = WUP
 }
 
+/**
+ * Indicates what gender the Mii is. Functionally
+ * all this does is change between shirt and dress styles
+ */
 export enum GENDER {
 	MALE,
 	FEMALE
 }
 
+/**
+ * Indicates what shirt color the Mii has
+ */
 export enum FAVORITE_COLOR {
 	RED,
 	ORANGE,
@@ -48,6 +93,9 @@ export enum FAVORITE_COLOR {
 
 // TODO - All the other color/type enums
 
+/**
+ * Indicates whether or not the mole feature is active
+ */
 export enum MOLE_TYPE {
 	DISABLED,
 	ENABLED
@@ -183,6 +231,10 @@ function mapToDecoded(decodedPath: string) {
 
 // TODO - Hook this up to something like Arian's WASM port of FFL?
 
+/**
+ * Handles Mii data in the `FFLiMiiDataCore` format. This is the raw data of
+ * the Mii, as used by the 3DS and Wii U
+ */
 export default class FFLiMiiDataCore {
 	private stream: FileStream;
 	private decoded!: ReturnType<typeof BinaryParser.infer<typeof coreParser>>;
@@ -757,5 +809,12 @@ export default class FFLiMiiDataCore {
 
 // * Aliases. No functionality differences, just purely for different visual contexts
 
+/**
+ * Alias of `FFLiMiiDataCore`. No functionality differences, just purely for different visual contexts
+ */
 export class CFLiPackedMiiDataCore extends FFLiMiiDataCore {}
+
+/**
+ * Alias of `FFLiMiiDataCore`. No functionality differences, just purely for different visual contexts
+ */
 export class CFLiRFLMiiDataCore extends FFLiMiiDataCore {}

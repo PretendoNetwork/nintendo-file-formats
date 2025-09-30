@@ -2,6 +2,11 @@ import { Buffer } from 'node:buffer';
 import FileStream from '@/file-stream';
 import FFLiMiiDataCore from '@/mii/ffl-imii-data-core';
 
+/**
+ * Handles Mii data in the `FFLiMiiDataOfficial` format. Acts as a container for
+ * `FFLiMiiDataCore` with an added creator name. Raw Mii data can be found in
+ * `FFLiMiiDataCore.core`. This is the Mii format used by the 3DS and Wii U
+ */
 export default class FFLiMiiDataOfficial {
 	private stream: FileStream;
 
@@ -139,5 +144,12 @@ export default class FFLiMiiDataOfficial {
 
 // * Aliases. No functionality differences, just purely for different visual contexts
 
+/**
+ * Alias of `FFLiMiiDataOfficial`. No functionality differences, just purely for different visual contexts
+ */
 export class CFLiPackedMiiDataOfficial extends FFLiMiiDataOfficial {}
+
+/**
+ * Alias of `FFLiMiiDataOfficial`. No functionality differences, just purely for different visual contexts
+ */
 export class Ver3StoreDataRaw extends FFLiMiiDataOfficial {}

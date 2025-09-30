@@ -169,6 +169,10 @@ const STUDIO_RENDER_INSTANCE_ROTATION_MODES = [
 
 const STUDIO_BG_COLOR_REGEX = /^[0-9A-F]{8}$/; // * Mii Studio does not allow lowercase
 
+/**
+ * Helper class to convert raw Mii data into the format used by Mii Studio,
+ * as well as for creating URLs for rendering whole Miis or specific Mii parts.
+*/
 export default class MiiStudioEncoder {
 	private data?: MiiStudioMiiData;
 

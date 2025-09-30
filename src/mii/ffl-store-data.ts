@@ -2,6 +2,12 @@ import { Buffer } from 'node:buffer';
 import FileStream from '@/file-stream';
 import FFLiMiiDataOfficial from '@/mii/ffl-imii-data-official';
 
+/**
+ * Handles Mii data in the `FFLStoreData` format. Acts as a container for
+ * `FFLiMiiDataOfficial` with an added checksum. Raw Mii data can be found
+ * in `FFLStoreData.official.core`. This is the Mii format used by the 3DS
+ * and Wii U
+ */
 export default class FFLStoreData {
 	private stream: FileStream;
 
@@ -184,6 +190,17 @@ export default class FFLStoreData {
 
 // * Aliases. No functionality differences, just purely for different visual contexts
 
+/**
+ * Alias of `FFLStoreData`. No functionality differences, just purely for different visual contexts
+ */
 export class CFLStoreData extends FFLStoreData {}
+
+/**
+ * Alias of `FFLStoreData`. No functionality differences, just purely for different visual contexts
+ */
 export class CFLiMiiDataPacket extends FFLStoreData {}
+
+/**
+ * Alias of `FFLStoreData`. No functionality differences, just purely for different visual contexts
+ */
 export class Ver3StoreData extends FFLStoreData {}
