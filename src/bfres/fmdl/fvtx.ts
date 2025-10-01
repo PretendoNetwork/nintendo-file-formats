@@ -61,6 +61,7 @@ export type FVTX_BUFFER = {
 	bufferingCount: number;
 	contextPointer: number;
 	dataOffset: number;
+	data: Buffer;
 };
 
 export type FVTX_VERTEX_ATTRIBUTE = {
@@ -176,9 +177,9 @@ export default class FVTX {
 	}
 
 	private parseBufferHeaders(): void {
-		this.stream.seek(this.bufferArrayOffset);
-
 		for (let i = 0; i < this.bufferCount; i++) {
+			this.stream.seek(this.bufferArrayOffset + (0x18 * i));
+
 			const dataPointer = this.stream.readUInt32();
 			const size = this.stream.readUInt32();
 			const bufferHandle = this.stream.readUInt32();
@@ -187,6 +188,10 @@ export default class FVTX {
 			const contextPointer = this.stream.readUInt32();
 			const dataOffset = this.stream.tell() + this.stream.readInt32();
 
+			this.stream.seek(dataOffset);
+
+			const data = this.stream.read(size);
+
 			this.bufferHeaders.push({
 				dataPointer: dataPointer,
 				size: size,
@@ -194,7 +199,8 @@ export default class FVTX {
 				stride: stride,
 				bufferingCount: bufferingCount,
 				contextPointer: contextPointer,
-				dataOffset: dataOffset
+				dataOffset: dataOffset,
+				data: data
 			});
 		}
 	}

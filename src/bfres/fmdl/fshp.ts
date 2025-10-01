@@ -1,5 +1,6 @@
 import FileStream from '@/file-stream';
 import { parseStringTableString } from '@/bfres';
+import type { FVTX_BUFFER } from '@/bfres/fmdl/fvtx';
 
 const FSHP_MAGIC = Buffer.from('FSHP');
 
@@ -36,13 +37,21 @@ export enum GX2IndexFormat {
 }
 
 export type FSHP_LOD_MODEL = {
-	type: GX2PrimitiveType;
+	primitiveType: GX2PrimitiveType;
 	indexFormat: GX2IndexFormat;
-	drawnPointsCount: number;
+	maxDrawnPointsCount: number;
 	visibilityGroupCount: number;
 	visibilityGroupOffset: number;
 	indexBufferOffset: number;
 	skippedVerticesCount: number;
+	indexBuffer: FVTX_BUFFER;
+	visibilityGroups: FSHP_VISIBILITY_GROUP[];
+	indices: number[];
+};
+
+export type FSHP_VISIBILITY_GROUP = {
+	indexBufferOffset: number;
+	drawnPointsCount: number;
 };
 
 export default class FSHP {
@@ -120,7 +129,7 @@ export default class FSHP {
 		this.visibilityGroupTreeNodeCount = this.stream.readUInt16();
 		this.boundingBoxRadius = this.stream.readFloat();
 		this.vertexBufferOffset = this.stream.tell() + this.stream.readInt32();
-		this.levelOfDetailModelOffset = this.stream.readInt32();
+		this.levelOfDetailModelOffset = this.stream.tell() + this.stream.readInt32();
 		this.skeletonIndexArrayOffset = this.stream.tell() + this.stream.readInt32();
 		this.keyShapeIndexOffset = this.stream.tell() + this.stream.readInt32();
 		this.visibilityGroupTreeNodesOffset = this.stream.tell() + this.stream.readInt32();
@@ -136,12 +145,12 @@ export default class FSHP {
 	}
 
 	private parseLoDModels(): void {
-		this.stream.seek(this.levelOfDetailModelOffset);
-
 		for (let i = 0; i < this.levelOfDetailModelCount; i++) {
-			const type = this.stream.readUInt32();
+			this.stream.seek(this.levelOfDetailModelOffset + (0x1C * i));
+
+			const primitiveType = this.stream.readUInt32();
 			const indexFormat = this.stream.readUInt32();
-			const drawnPointsCount = this.stream.readUInt32();
+			const maxDrawnPointsCount = this.stream.readUInt32();
 			const visibilityGroupCount = this.stream.readUInt16();
 
 			this.stream.skip(0x2); // * Padding
@@ -150,14 +159,76 @@ export default class FSHP {
 			const indexBufferOffset = this.stream.tell() + this.stream.readInt32();
 			const skippedVerticesCount = this.stream.readUInt32();
 
+			this.stream.seek(indexBufferOffset);
+
+			const indexBufferDataPointer = this.stream.readUInt32();
+			const indexBufferSize = this.stream.readUInt32();
+			const indexBufferBufferHandle = this.stream.readUInt32();
+			const indexBufferStride = this.stream.readUInt16();
+			const indexBufferBufferingCount = this.stream.readUInt16();
+			const indexBufferContextPointer = this.stream.readUInt32();
+			const indexBufferDataOffset = this.stream.tell() + this.stream.readInt32();
+
+			this.stream.seek(indexBufferDataOffset);
+
+			const indexBufferData = this.stream.read(indexBufferSize);
+
+			const indexBuffer: FVTX_BUFFER = {
+				dataPointer: indexBufferDataPointer,
+				size: indexBufferSize,
+				bufferHandle: indexBufferBufferHandle,
+				stride: indexBufferStride,
+				bufferingCount: indexBufferBufferingCount,
+				contextPointer: indexBufferContextPointer,
+				dataOffset: indexBufferDataOffset,
+				data: indexBufferData
+			};
+
+			const visibilityGroups: FSHP_VISIBILITY_GROUP[] = [];
+
+			for (let j = 0; j < visibilityGroupCount; j++) {
+				this.stream.seek(visibilityGroupOffset + (0x08 * j));
+
+				visibilityGroups.push({
+					indexBufferOffset: this.stream.readUInt32(),
+					drawnPointsCount: this.stream.readUInt32()
+				});
+			}
+
+			const indices: number[] = [];
+
+			// TODO - This is mostly a hack, ideally this would be done with "this.stream"
+			if (indexFormat === GX2IndexFormat.GX2_INDEX_FORMAT_U16_LE) {
+				for (let i = 2 * skippedVerticesCount; i < indexBufferData.length; i += 2) {
+					indices.push(indexBufferData.readUInt16LE(i));
+				}
+			} else if (indexFormat === GX2IndexFormat.GX2_INDEX_FORMAT_U32_LE) {
+				for (let i = 4 * skippedVerticesCount; i < indexBufferData.length; i += 4) {
+					indices.push(indexBufferData.readUInt32LE(i));
+				}
+			} else if (indexFormat === GX2IndexFormat.GX2_INDEX_FORMAT_U16) {
+				// TODO - This should use the streams endianness I think?
+				for (let i = 2 * skippedVerticesCount; i < indexBufferData.length; i += 2) {
+					indices.push(indexBufferData.readUInt16BE(i));
+				}
+			} else if (indexFormat === GX2IndexFormat.GX2_INDEX_FORMAT_U32) {
+				// TODO - This should use the streams endianness I think?
+				for (let i = 4 * skippedVerticesCount; i < indexBufferData.length; i += 4) {
+					indices.push(indexBufferData.readUInt32BE(i));
+				}
+			}
+
 			this.levelOfDetailModels.push({
-				type: type,
+				primitiveType: primitiveType,
 				indexFormat: indexFormat,
-				drawnPointsCount: drawnPointsCount,
+				maxDrawnPointsCount: maxDrawnPointsCount,
 				visibilityGroupCount: visibilityGroupCount,
 				visibilityGroupOffset: visibilityGroupOffset,
 				indexBufferOffset: indexBufferOffset,
-				skippedVerticesCount: skippedVerticesCount
+				skippedVerticesCount: skippedVerticesCount,
+				indexBuffer: indexBuffer,
+				visibilityGroups: visibilityGroups,
+				indices
 			});
 		}
 	}
