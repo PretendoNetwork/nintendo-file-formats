@@ -223,9 +223,47 @@ export default class BFRES {
 			return '';
 		}
 
-		const obj = '# Exported from BFRES\n';
+		let obj = '# Exported from BFRES\n';
+		obj += `# Model: ${modelName}\n\n`;
 
-		// TODO - Actually fill this
+		for (const fvtx of model.vertexArray) {
+			for (const vertex of fvtx.vertices) {
+				if (vertex.position && Array.isArray(vertex.position)) {
+					const [x, y, z] = vertex.position;
+					obj += `v ${x} ${y} ${z}\n`;
+				}
+			}
+		}
+
+		for (const fvtx of model.vertexArray) {
+			for (const vertex of fvtx.vertices) {
+				if (vertex.normal && Array.isArray(vertex.normal)) {
+					const [x, y, z] = vertex.normal;
+					obj += `vn ${x} ${y} ${z}\n`;
+				}
+			}
+		}
+
+		for (const shape of model.shapes) {
+			obj += `o ${shape.polygonName}\n`;
+
+			if (shape.levelOfDetailModels.length > 0) {
+				const lodModel = shape.levelOfDetailModels[0];
+				const indices = lodModel.indices;
+
+				for (let i = 0; i < indices.length; i += 3) {
+					if (i + 2 < indices.length) {
+						const idx1 = indices[i] + 1;
+						const idx2 = indices[i + 1] + 1;
+						const idx3 = indices[i + 2] + 1;
+
+						obj += `f ${idx1}//${idx1} ${idx2}//${idx2} ${idx3}//${idx3}\n`;
+					}
+				}
+
+				obj += '\n';
+			}
+		}
 
 		return obj;
 	}
