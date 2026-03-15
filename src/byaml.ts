@@ -347,6 +347,8 @@ export default class BYAML {
 			typeTable.push(nodeType);
 		}
 
+		this.stream.alignBlock(4); // * Types table is padded to a multiple of 4 using null bytes
+
 		const elements: Node[] = [];
 
 		for (const nodeType of typeTable) {
