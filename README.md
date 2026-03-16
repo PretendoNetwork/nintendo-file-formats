@@ -56,7 +56,7 @@ Some classes support encoding the data back into a buffer. This is done through 
 - [x] TMD
 - [x] Ticket. Does not decrypt title key
 - [ ] Encrypted title parts (`.app` files)
-- [ ] Title hashes (`.h3` files)
+- [ ] Title hash trees (`.h3` files)
 - [ ] Mii data
 - [x] MSBT. Parses:
   - [x] LBL1
@@ -66,21 +66,25 @@ Some classes support encoding the data back into a buffer. This is done through 
   - [ ] TSY1
 - [x] BYML/BYAML
 - [ ] SARC
-- [ ] SZS (Yaz0)
+- [x] SZS (Yaz0)
+- [x] CMP (`.cmp` zlib compressed files)
+- [x] ME01 / SA01
 
 ## Supported files (encoding)
-- [ ] CIA. Does not decrypt contents
-- [x] Certificates. Signature verification works, just not on illegitimate signatures (homebrew, forged tickets, etc)
-- [ ] SMDH. All data is extracted, but some pieces (like several sections of Application Settings) are left as `Buffer` blobs
+- [ ] CIA
+- [x] Certificates
+- [ ] SMDH
 - [x] TMD
-- [x] Ticket. Does not decrypt title key
+- [x] Ticket
 - [ ] Encrypted title parts (`.app` files)
-- [ ] Title hashes (`.h3` files)
+- [ ] Title hash trees (`.h3` files)
 - [ ] Mii data
 - [ ] MSBT
 - [ ] BYML/BYAML
 - [ ] SARC
 - [ ] SZS (Yaz0)
+- [ ] CMP (`.cmp` zlib compressed files)
+- [ ] ME01 / SA01
 
 ## Example
 ```ts
