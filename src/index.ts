@@ -9,6 +9,8 @@ export * from '@/certificate';
 export { default as CIA } from '@/cia';
 export * from '@/cia';
 
+export * from '@/compression';
+
 export { default as ME01 } from '@/me01';
 export * from '@/me01';
 

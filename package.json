@@ -1,6 +1,6 @@
 {
 	"name": "@pretendonetwork/nintendo-files",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
 	"scripts": {
 		"lint": "npx eslint .",
@@ -9,7 +9,11 @@
 	},
 	"keywords": [],
 	"author": "",
-	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/PretendoNetwork/nintendo-file-formats.git"
+	},
+	"license": "LGPL-3.0-only",
 	"devDependencies": {
 		"@types/node": "^20.5.0",
 		"@types/node-rsa": "^1.1.1",
@@ -51,6 +55,16 @@
 			"import": "./dist/cia.js",
 			"require": "./dist/cia.js",
 			"types": "./dist/cia.d.ts"
+		},
+		"./compression/cmp": {
+			"import": "./dist/compression/cmp.js",
+			"require": "./dist/compression/cmp.js",
+			"types": "./dist/compression/cmp.d.ts"
+		},
+		"./compression/yaz0": {
+			"import": "./dist/compression/yaz0.js",
+			"require": "./dist/compression/yaz0.js",
+			"types": "./dist/compression/yaz0.d.ts"
 		},
 		"./msbt": {
 			"import": "./dist/msbt.js",
