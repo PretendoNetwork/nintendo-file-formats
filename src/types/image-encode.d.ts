@@ -1,4 +1,4 @@
-declare module 'image-encode'{
+declare module 'image-encode' {
 	// * https://stackoverflow.com/a/53926269
 	type TypedArray = | Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
 
@@ -10,9 +10,9 @@ declare module 'image-encode'{
 		shape?: EncodingOptionsShape;
 		width?: number;
 		height?: number;
-		type?: string;     // * Aliases
-		format?: string;   // * Aliases
-		mime?: string;     // * Aliases
+		type?: string; // * Aliases
+		format?: string; // * Aliases
+		mime?: string; // * Aliases
 		mimeType?: string; // * Aliases
 	}
 
@@ -27,5 +27,5 @@ declare module 'image-encode'{
 		options?: EncodingOptions
 	): ArrayBuffer;
 
-    export default encode;
+	export default encode;
 }

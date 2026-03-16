@@ -12,7 +12,7 @@ export default class ME01 {
 	/**
 	 * Files in the archive
 	 */
-	public files: { name: string; data: Buffer; }[] = [];
+	public files: { name: string; data: Buffer }[] = [];
 
 	/**
 	 * Parses the ME01 from the provided `fdOrPath`
@@ -152,7 +152,6 @@ export default class ME01 {
 		// * next offset, but this seems like it can be skipped by just jumping right to the
 		// * next file, saving reads
 		for (let i = 0; i < fileCount; i++) {
-
 			const fileOffset = dataOffsets[i];
 			const fileName = fileNames[i];
 			const fileSize = dataSizes[i];

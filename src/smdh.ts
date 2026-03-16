@@ -203,7 +203,7 @@ export default class SMDH {
 			this.applicationTitles.push({
 				descriptionShort: this.stream.readBytes(0x80).toString('utf16le').split('\0')[0],
 				descriptionLong: this.stream.readBytes(0x100).toString('utf16le').split('\0')[0],
-				publisher: this.stream.readBytes(0x80).toString('utf16le').split('\0')[0],
+				publisher: this.stream.readBytes(0x80).toString('utf16le').split('\0')[0]
 			});
 		}
 
@@ -215,7 +215,7 @@ export default class SMDH {
 			EULAVersion: this.stream.readUInt16LE(),
 			reserved: this.stream.readUInt16LE(),
 			optimalAnimationDefaultFrame: this.stream.readUInt32LE(),
-			streetPassID: this.stream.readUInt32LE(),
+			streetPassID: this.stream.readUInt32LE()
 		};
 
 		this.reserved2 = this.stream.readUInt64LE();

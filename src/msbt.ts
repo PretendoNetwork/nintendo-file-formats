@@ -12,7 +12,7 @@ export default class MSBT {
 	/**
 	 * Unknown
 	 */
-	public labels: { label: string; id: number; }[] = [];
+	public labels: { label: string; id: number }[] = [];
 
 	/**
 	 * Text messages
@@ -252,7 +252,7 @@ export default class MSBT {
 			const tmpPos = this.stream.tell();
 			this.stream.seek(base + messageOffset);
 
-			while (!Buffer.from([this.stream.peek(), this.stream.peek(this.stream.tell()+1) ]).equals(NULL_TERM)) {
+			while (!Buffer.from([this.stream.peek(), this.stream.peek(this.stream.tell() + 1)]).equals(NULL_TERM)) {
 				const char = this.stream.readUInt8();
 				chars.push(char);
 			}
