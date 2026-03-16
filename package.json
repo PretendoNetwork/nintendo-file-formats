@@ -71,6 +71,11 @@
 			"require": "./dist/msbt.js",
 			"types": "./dist/msbt.d.ts"
 		},
+		"./me01": {
+			"import": "./dist/me01.js",
+			"require": "./dist/me01.js",
+			"types": "./dist/me01.d.ts"
+		},
 		"./smdh": {
 			"import": "./dist/smdh.js",
 			"require": "./dist/smdh.js",
