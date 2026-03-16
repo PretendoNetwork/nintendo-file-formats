@@ -23,7 +23,6 @@ export default class CIA {
 	private stream: FileStream;
 	private encryptedContents: Buffer;
 
-
 	/**
 	 * Unknown
 	 */
@@ -248,7 +247,7 @@ export default class CIA {
 				reserved1: this.stream.readBytes(0x180),
 				coreVersion: this.stream.readUInt32LE(),
 				reserved2: this.stream.readBytes(0xFC),
-				iconData: SMDH.fromFileStream(this.stream),
+				iconData: SMDH.fromFileStream(this.stream)
 			};
 		}
 	}
@@ -280,7 +279,7 @@ export default class CIA {
 		}
 
 		if (activeTMDContents.size < activeContents.size) {
-			throw new Error(`TMD is missing ${activeContents.size-activeTMDContents.size} content records from the CIA content index`);
+			throw new Error(`TMD is missing ${activeContents.size - activeTMDContents.size} content records from the CIA content index`);
 		}
 
 		const contentsStream = new FileStream(this.encryptedContents);

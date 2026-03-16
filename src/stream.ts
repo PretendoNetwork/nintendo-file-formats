@@ -1,5 +1,5 @@
 export default class Stream {
-	protected buffer: Buffer;
+	public buffer: Buffer;
 	protected offset = 0;
 
 	/**
@@ -13,10 +13,10 @@ export default class Stream {
 
 	constructor(bufferOrStream: Buffer | Stream) {
 		// TODO - This is a hack to support FileStream in the MSBT parser
-		if (bufferOrStream instanceof Buffer) {
-			this.buffer = bufferOrStream;
-		} else {
+		if (bufferOrStream instanceof Stream) {
 			this.buffer = bufferOrStream.buffer;
+		} else {
+			this.buffer = bufferOrStream;
 		}
 	}
 

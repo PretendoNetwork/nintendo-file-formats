@@ -87,7 +87,7 @@ export default class TMD {
 	/**
 	 * Unused
 	 */
-	public reserved2: number;  // * 4 bytes
+	public reserved2: number; // * 4 bytes
 
 	/**
 	 * Unknown
@@ -270,24 +270,24 @@ export default class TMD {
 		bufferSize += 0x4; // * Signature type
 		bufferSize += getSignatureSize(this.signatureType).TOTAL; // * Signature + padding
 		bufferSize += 0x40; // * issuer
-		bufferSize += 0x1;  // * version
-		bufferSize += 0x1;  // * caVersion
-		bufferSize += 0x1;  // * signerVersion
-		bufferSize += 0x1;  // * reserved1
-		bufferSize += 0x8;  // * systemVersion
-		bufferSize += 0x8;  // * titleID
-		bufferSize += 0x4;  // * titleType
-		bufferSize += 0x2;  // * groupID
-		bufferSize += 0x4;  // * saveDataSize
-		bufferSize += 0x4;  // * SRLPrivateSaveDataSize
-		bufferSize += 0x4;  // * reserved2
-		bufferSize += 0x1;  // * SRLFlag
+		bufferSize += 0x1; // * version
+		bufferSize += 0x1; // * caVersion
+		bufferSize += 0x1; // * signerVersion
+		bufferSize += 0x1; // * reserved1
+		bufferSize += 0x8; // * systemVersion
+		bufferSize += 0x8; // * titleID
+		bufferSize += 0x4; // * titleType
+		bufferSize += 0x2; // * groupID
+		bufferSize += 0x4; // * saveDataSize
+		bufferSize += 0x4; // * SRLPrivateSaveDataSize
+		bufferSize += 0x4; // * reserved2
+		bufferSize += 0x1; // * SRLFlag
 		bufferSize += 0x31; // * reserved3
-		bufferSize += 0x4;  // * accessRights
-		bufferSize += 0x2;  // * titleVersion
-		bufferSize += 0x2;  // * contentCount
-		bufferSize += 0x2;  // * bootIndex
-		bufferSize += 0x2;  // * minorVersion
+		bufferSize += 0x4; // * accessRights
+		bufferSize += 0x2; // * titleVersion
+		bufferSize += 0x2; // * contentCount
+		bufferSize += 0x2; // * bootIndex
+		bufferSize += 0x2; // * minorVersion
 
 		if (this.version === 1) {
 			bufferSize += 0x20; // * contentInfoRecordsHash
@@ -430,7 +430,7 @@ export default class TMD {
 				index: this.stream.readUInt16BE(),
 				type: this.stream.readUInt16BE(),
 				size: this.stream.readUInt64BE(),
-				hash: this.stream.readBytes(0x20),
+				hash: this.stream.readBytes(0x20)
 			});
 		}
 

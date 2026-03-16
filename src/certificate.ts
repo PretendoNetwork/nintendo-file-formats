@@ -57,7 +57,6 @@ export default class Certificate {
 	 */
 	public signatureBody: Buffer; // * Used to verify the signature
 
-
 	/**
 	 * Parses the certificate from the provided `fdOrPath`
 	 *
@@ -164,9 +163,9 @@ export default class Certificate {
 		bufferSize += 0x4; // * Signature type
 		bufferSize += getSignatureSize(this.signatureType).TOTAL; // * Signature + padding
 		bufferSize += 0x40; // * issuer
-		bufferSize += 0x4;  // * keyType
+		bufferSize += 0x4; // * keyType
 		bufferSize += 0x40; // * name
-		bufferSize += 0x4;  // * expiration
+		bufferSize += 0x4; // * expiration
 		bufferSize += this.publicKeyData.length;
 
 		return bufferSize;
@@ -287,7 +286,7 @@ export default class Certificate {
 
 	private exportKeyECDSA233R1(): string {
 		const publicKeyBytes = Buffer.concat([
-			Buffer.from([ 0x4 ]), // * Uncompressed key (I think it's uncompressed?)
+			Buffer.from([0x4]), // * Uncompressed key (I think it's uncompressed?)
 			this.publicKeyData.subarray(0x0, 0x3C)
 		]);
 

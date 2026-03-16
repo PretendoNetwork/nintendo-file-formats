@@ -1,21 +1,24 @@
 {
 	"name": "@pretendonetwork/nintendo-files",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
 	"scripts": {
-		"lint": "npx eslint .",
+		"lint": "eslint ./src",
 		"clean": "npx rimraf ./dist",
 		"build": "npm run lint && npm run clean && npx tsc && npx tsc-alias"
 	},
 	"keywords": [],
 	"author": "",
-	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/PretendoNetwork/nintendo-file-formats.git"
+	},
+	"license": "LGPL-3.0-only",
 	"devDependencies": {
-		"@types/node": "^20.5.0",
+		"@pretendonetwork/eslint-config": "^0.1.4",
+		"@types/node": "^25.5.0",
 		"@types/node-rsa": "^1.1.1",
-		"@typescript-eslint/eslint-plugin": "^6.4.0",
-		"@typescript-eslint/parser": "^6.4.0",
-		"eslint": "^7.32.0",
+		"eslint": "^9.39.4",
 		"rimraf": "^5.0.1",
 		"tsc-alias": "^1.8.7"
 	},
@@ -52,10 +55,25 @@
 			"require": "./dist/cia.js",
 			"types": "./dist/cia.d.ts"
 		},
+		"./compression/cmp": {
+			"import": "./dist/compression/cmp.js",
+			"require": "./dist/compression/cmp.js",
+			"types": "./dist/compression/cmp.d.ts"
+		},
+		"./compression/yaz0": {
+			"import": "./dist/compression/yaz0.js",
+			"require": "./dist/compression/yaz0.js",
+			"types": "./dist/compression/yaz0.d.ts"
+		},
 		"./msbt": {
 			"import": "./dist/msbt.js",
 			"require": "./dist/msbt.js",
 			"types": "./dist/msbt.d.ts"
+		},
+		"./me01": {
+			"import": "./dist/me01.js",
+			"require": "./dist/me01.js",
+			"types": "./dist/me01.d.ts"
 		},
 		"./smdh": {
 			"import": "./dist/smdh.js",

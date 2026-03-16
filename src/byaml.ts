@@ -4,21 +4,21 @@ const MAGIC_BE = Buffer.from('BY');
 const MAGIC_LE = Buffer.from('YB');
 
 enum NodeTypes {
-	STRING =                 0xA0, // * Any version
-	BINARY_DATA =            0xA1, // * Versions 1 and 4+
+	STRING = 0xA0, // * Any version
+	BINARY_DATA = 0xA1, // * Versions 1 and 4+
 	BINARY_DATA_WITH_PARAM = 0xA2, // * Version 5
-	ARRAY =                  0xC0, // * Any version
-	DICTIONARY =             0xC1, // * Any version
-	STRING_TABLE =           0xC2, // * Any version
-	BINARY_TABLE =           0xC3, // * Version 1
-	BOOL =                   0xD0, // * Any version
-	INT32 =                  0xD1, // * Any version
-	FLOAT =                  0xD2, // * Any version
-	UINT32 =                 0xD3, // * Versions 2+
-	INT64 =                  0xD4, // * Versions 3+
-	UINT64 =                 0xD5, // * Versions 3+
-	DOUBLE =                 0xD6, // * Versions 3+
-	NULL =                   0xFF  // * Any version
+	ARRAY = 0xC0, // * Any version
+	DICTIONARY = 0xC1, // * Any version
+	STRING_TABLE = 0xC2, // * Any version
+	BINARY_TABLE = 0xC3, // * Version 1
+	BOOL = 0xD0, // * Any version
+	INT32 = 0xD1, // * Any version
+	FLOAT = 0xD2, // * Any version
+	UINT32 = 0xD3, // * Versions 2+
+	INT64 = 0xD4, // * Versions 3+
+	UINT64 = 0xD5, // * Versions 3+
+	DOUBLE = 0xD6, // * Versions 3+
+	NULL = 0xFF // * Any version
 }
 
 interface Node {
@@ -256,14 +256,14 @@ export default class BYAML {
 
 		this.rootNodeOffset = this.stream.readUInt32();
 
-		this.stream.seek(dictionaryKeyTableOffset+1); // * Skip the type byte
+		this.stream.seek(dictionaryKeyTableOffset + 1); // * Skip the type byte
 		this.dictionaryKeyTable = this.readStringTableNode();
 
-		this.stream.seek(stringTableOffset+1); // * Skip the type byte
+		this.stream.seek(stringTableOffset + 1); // * Skip the type byte
 		this.stringTable = this.readStringTableNode();
 
 		if (binaryDataTableOffset) {
-			this.stream.seek(binaryDataTableOffset+1); // * Skip the type byte
+			this.stream.seek(binaryDataTableOffset + 1); // * Skip the type byte
 			this.binaryDataTable = this.readBinaryTableNode();
 		}
 	}
@@ -346,6 +346,8 @@ export default class BYAML {
 
 			typeTable.push(nodeType);
 		}
+
+		this.stream.alignBlock(4); // * Types table is padded to a multiple of 4 using null bytes
 
 		const elements: Node[] = [];
 
