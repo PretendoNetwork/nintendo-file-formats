@@ -16,7 +16,7 @@
 	"license": "LGPL-3.0-only",
 	"devDependencies": {
 		"@pretendonetwork/eslint-config": "^0.1.4",
-		"@types/node": "^20.5.0",
+		"@types/node": "^25.5.0",
 		"@types/node-rsa": "^1.1.1",
 		"eslint": "^9.39.4",
 		"rimraf": "^5.0.1",
