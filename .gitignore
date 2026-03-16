@@ -58,6 +58,7 @@ typings/
 .env
 
 # custom
+.DS_Store
 dist
 test
 *.cia
