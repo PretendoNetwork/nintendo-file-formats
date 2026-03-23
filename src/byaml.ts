@@ -1,4 +1,6 @@
 import FileStream from '@/file-stream';
+import StreamOut from '@/stream-out';
+import type StoredOffset from '@/stored-offset';
 
 const MAGIC_BE = Buffer.from('BY');
 const MAGIC_LE = Buffer.from('YB');
@@ -21,94 +23,105 @@ enum NodeTypes {
 	NULL = 0xFF // * Any version
 }
 
-interface Node {
-	type: NodeTypes.STRING | NodeTypes.BINARY_DATA | NodeTypes.BINARY_DATA_WITH_PARAM | NodeTypes.ARRAY | NodeTypes.DICTIONARY | NodeTypes.STRING_TABLE | NodeTypes.BINARY_TABLE | NodeTypes.BOOL | NodeTypes.INT32 | NodeTypes.FLOAT | NodeTypes.UINT32 | NodeTypes.INT64 | NodeTypes.UINT64 | NodeTypes.DOUBLE | NodeTypes.NULL;
-	value: unknown;
-}
-
 type StringNode = {
-	type: 0xA0;
+	type: NodeTypes.STRING;
 	value: string;
 };
 
 type BinaryDataNode = {
-	type: 0xA1;
+	type: NodeTypes.BINARY_DATA;
 	value: Buffer;
 };
 
 type BinaryDataWithParamNode = {
-	type: 0xA2;
+	type: NodeTypes.BINARY_DATA_WITH_PARAM;
 	value: Buffer; // TODO - What is the param?
 };
 
 type ArrayNode = {
-	type: 0xC0;
+	type: NodeTypes.ARRAY;
 	value: Node[];
 };
 
 type DictionaryNode = {
-	type: 0xC1;
+	type: NodeTypes.DICTIONARY;
 	value: Record<string, Node>;
 };
 
 type StringTableNode = {
-	type: 0xC2;
+	type: NodeTypes.STRING_TABLE;
 	value: string[];
 };
 
 type BinaryTableNode = {
-	type: 0xC3;
+	type: NodeTypes.BINARY_TABLE;
 	value: Buffer[];
 };
 
 type BoolNode = {
-	type: 0xD0;
+	type: NodeTypes.BOOL;
 	value: boolean;
 };
 
 type IntegerNode = {
-	type: 0xD1;
+	type: NodeTypes.INT32;
 	value: number;
 };
 
 type FloatNode = {
-	type: 0xD2;
+	type: NodeTypes.FLOAT;
 	value: number;
 };
 
 type UnsignedIntegerNode = {
-	type: 0xD3;
+	type: NodeTypes.UINT32;
 	value: number;
 };
 
 type Integer64Node = {
-	type: 0xD4;
+	type: NodeTypes.INT64;
 	value: bigint;
 };
 
 type UnsignedInteger64Node = {
-	type: 0xD5;
+	type: NodeTypes.UINT64;
 	value: bigint;
 };
 
 type DoubleNode = {
-	type: 0xD6;
+	type: NodeTypes.DOUBLE;
 	value: number;
 };
 
 type NullNode = {
-	type: 0xFF;
+	type: NodeTypes.NULL;
 	value: null;
 };
 
 type RootNode = DictionaryNode | ArrayNode;
 
+type Node = StringNode | BinaryDataNode | BinaryDataWithParamNode | ArrayNode | DictionaryNode | StringTableNode | BinaryTableNode | BoolNode | IntegerNode | FloatNode | UnsignedIntegerNode | Integer64Node | UnsignedInteger64Node | DoubleNode | NullNode;
+
+type BYAMLEncodeSettings = {
+	version?: number;
+	endianness?: 'le' | 'be';
+	rootNode?: RootNode;
+};
+
 export default class BYAML {
 	private stream: FileStream;
-	private dictionaryKeyTable: StringTableNode;
-	private stringTable: StringTableNode;
+	private streamOut: StreamOut;
+	private dictionaryKeyTable: StringTableNode = {
+		type: NodeTypes.STRING_TABLE,
+		value: []
+	};
+	private stringTable: StringTableNode = {
+		type: NodeTypes.STRING_TABLE,
+		value: []
+	};
 	private binaryDataTable: BinaryTableNode; // * Only seen in older versions
 	private rootNodeOffset: number;
+	private endianness: 'le' | 'be';
 
 	/**
 	 * BYAML version number
@@ -236,8 +249,12 @@ export default class BYAML {
 		}
 
 		if (magic.equals(MAGIC_BE)) {
-			this.stream.bom = 'be';
+			this.endianness = 'be';
+		} else {
+			this.endianness = 'le';
 		}
+
+		this.stream.bom = this.endianness;
 
 		this.version = this.stream.readUInt16();
 
@@ -595,6 +612,365 @@ export default class BYAML {
 			type: NodeTypes.NULL,
 			value: null
 		};
+	}
+
+	public encode(settings?: BYAMLEncodeSettings): Buffer {
+		if (!settings) {
+			settings = {
+				version: this.version,
+				endianness: this.endianness,
+				rootNode: this.rootNode
+			}
+		}
+
+		if (settings.version === undefined) {
+			if (this.version === undefined) {
+				throw new Error('Failed to encode BYAML file. Missing version');
+			}
+
+			settings.version = this.version;
+		}
+
+		if (settings.endianness === undefined) {
+			if (this.endianness === undefined) {
+				throw new Error('Failed to encode BYAML file. Missing endianness');
+			}
+
+			settings.endianness = this.endianness;
+		}
+
+		if (settings.rootNode === undefined) {
+			if (this.rootNode === undefined) {
+				throw new Error('Failed to encode BYAML file. Missing root node');
+			}
+
+			settings.rootNode = this.rootNode;
+		}
+
+		// * Reset back to empty in case the same instance is reused
+		this.dictionaryKeyTable.value = [];
+		this.stringTable.value = [];
+
+		this.populateStringTables(settings.rootNode);
+
+		this.streamOut = new StreamOut();
+		this.streamOut.bom = settings.endianness;
+
+		this.streamOut.writeBytes(settings.endianness === 'le' ? MAGIC_LE : MAGIC_BE);
+		this.streamOut.writeUint16(settings.version);
+
+		// TODO - Support binaryDataTable
+		let dictionaryKeyTableOffset: StoredOffset | undefined;
+		let stringTableOffset: StoredOffset | undefined;
+
+		if (this.dictionaryKeyTable.value.length !== 0) {
+			dictionaryKeyTableOffset = this.streamOut.storeOffset();
+		} else {
+			this.streamOut.writeUint32(0);
+		}
+
+		if (this.dictionaryKeyTable.value.length !== 0) {
+			stringTableOffset = this.streamOut.storeOffset();
+		} else {
+			this.streamOut.writeUint32(0);
+		}
+
+		const rootNodeOffset = this.streamOut.storeOffset();
+
+		if (dictionaryKeyTableOffset) {
+			this.encodeNode(this.dictionaryKeyTable, dictionaryKeyTableOffset);
+		}
+
+		if (stringTableOffset) {
+			this.encodeNode(this.stringTable, stringTableOffset);
+		}
+
+		this.encodeNode(settings.rootNode, rootNodeOffset);
+
+		return this.streamOut.bytes();
+	}
+
+	private populateStringTables(node: Node): void {
+		if (node.type === NodeTypes.DICTIONARY) {
+			for (const key in node.value) {
+				if (!this.dictionaryKeyTable.value.includes(key)) {
+					this.dictionaryKeyTable.value.push(key);
+				}
+
+				this.populateStringTables(node.value[key]);
+			}
+		}
+
+		if (node.type === NodeTypes.STRING && !this.stringTable.value.includes(node.value)) {
+			this.stringTable.value.push(node.value);
+		}
+
+		if (node.type === NodeTypes.ARRAY) {
+			for (const child of node.value) {
+				this.populateStringTables(child);
+			}
+		}
+	}
+
+	private encodeNode(node: Node, offset: StoredOffset): void {
+		this.streamOut.alignBlock(4);
+		offset.write();
+
+		this.streamOut.writeUint8(node.type);
+
+		switch (node.type) {
+			case NodeTypes.STRING:
+				this.encodeStringNode(node);
+				break;
+			case NodeTypes.BINARY_DATA:
+				this.encodeBinaryDataNode(node);
+				break;
+			case NodeTypes.BINARY_DATA_WITH_PARAM:
+				this.encodeBinaryDataWithParamNode(node);
+				break;
+			case NodeTypes.ARRAY:
+				this.encodeArrayNode(node);
+				break;
+			case NodeTypes.DICTIONARY:
+				this.encodeDictionaryNode(node);
+				break;
+			case NodeTypes.STRING_TABLE:
+				this.encodeStringTableNode(node);
+				break;
+			case NodeTypes.BINARY_TABLE:
+				this.encodeBinaryTableNode(node);
+				break;
+			case NodeTypes.BOOL:
+				this.encodeBoolNode(node);
+				break;
+			case NodeTypes.INT32:
+				this.encodeIntegerNode(node);
+				break;
+			case NodeTypes.FLOAT:
+				this.encodeFloatNode(node);
+				break;
+			case NodeTypes.UINT32:
+				this.encodeUnsignedIntegerNode(node);
+				break;
+			case NodeTypes.INT64:
+				this.encodeInteger64Node(node);
+				break;
+			case NodeTypes.UINT64:
+				this.encodeUnsignedInteger64Node(node);
+				break;
+			case NodeTypes.DOUBLE:
+				this.encodeDoubleNode(node);
+				break;
+			case NodeTypes.NULL:
+				this.encodeNullNode(node);
+				break;
+		}
+	}
+
+	private encodeStringNode(node: StringNode): void {
+		// TODO - Implement this
+		throw new Error('StringNodes not implemented');
+	}
+
+	private encodeBinaryDataNode(node: BinaryDataNode): void {
+		// TODO - Implement this
+		throw new Error('BinaryDataNodes not implemented');
+	}
+
+	private encodeBinaryDataWithParamNode(node: BinaryDataWithParamNode): void {
+		// TODO - Implement this
+		throw new Error('BinaryDataWithParamNodes not implemented');
+	}
+
+	private encodeArrayNode(node: ArrayNode): void {
+		const count = node.value.length;
+
+		this.streamOut.writeUint24(count);
+
+		for (const { type } of node.value) {
+			this.streamOut.writeUint8(type);
+		}
+
+		this.streamOut.alignBlock(4);
+
+		const pendingOffsets: {
+			offset: StoredOffset;
+			node: Node
+		}[] = [];
+
+		for (const entry of node.value) {
+			switch (entry.type) {
+				case NodeTypes.STRING:
+					this.streamOut.writeUint32(this.stringTable.value.indexOf(entry.value));
+					break;
+				case NodeTypes.ARRAY:
+				case NodeTypes.DICTIONARY:
+				case NodeTypes.STRING_TABLE:
+				case NodeTypes.BINARY_TABLE:
+				case NodeTypes.INT64:
+				case NodeTypes.UINT64:
+				case NodeTypes.DOUBLE:
+					pendingOffsets.push({
+						offset: this.streamOut.storeOffset(),
+						node: entry
+					});
+					break;
+				case NodeTypes.BOOL:
+					this.streamOut.writeUint32(entry.value ? 1 : 0);
+					break;
+				case NodeTypes.INT32:
+					this.streamOut.writeInt32(entry.value);
+					break;
+				case NodeTypes.FLOAT:
+					this.streamOut.writeFloat(entry.value);
+					break;
+				case NodeTypes.UINT32:
+					this.streamOut.writeUint32(entry.value);
+					break;
+				case NodeTypes.NULL:
+					this.streamOut.writeUint32(0);
+			}
+		}
+
+		for (const pending of pendingOffsets) {
+			this.encodeNode(pending.node, pending.offset);
+		}
+	}
+
+	private encodeDictionaryNode(node: DictionaryNode): void {
+		const entries = Object.entries(node.value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+		const count = entries.length;
+
+		this.streamOut.writeUint24(count);
+
+		const pendingOffsets: {
+			offset: StoredOffset;
+			node: Node
+		}[] = [];
+
+		for (const [key, entry] of entries) {
+			const keyIndex = this.dictionaryKeyTable.value.indexOf(key);
+
+			this.streamOut.writeUint24(keyIndex);
+			this.streamOut.writeUint8(entry.type);
+
+			switch (entry.type) {
+				case NodeTypes.STRING:
+					this.streamOut.writeUint32(this.stringTable.value.indexOf(entry.value));
+					break;
+				case NodeTypes.ARRAY:
+				case NodeTypes.DICTIONARY:
+				case NodeTypes.STRING_TABLE:
+				case NodeTypes.BINARY_TABLE:
+				case NodeTypes.INT64:
+				case NodeTypes.UINT64:
+				case NodeTypes.DOUBLE:
+					pendingOffsets.push({
+						offset: this.streamOut.storeOffset(),
+						node: entry
+					});
+					break;
+				case NodeTypes.BOOL:
+					this.streamOut.writeUint32(entry.value ? 1 : 0);
+					break;
+				case NodeTypes.INT32:
+					this.streamOut.writeInt32(entry.value);
+					break;
+				case NodeTypes.FLOAT:
+					this.streamOut.writeFloat(entry.value);
+					break;
+				case NodeTypes.UINT32:
+					this.streamOut.writeUint32(entry.value);
+					break;
+				case NodeTypes.NULL:
+					this.streamOut.writeUint32(0);
+			}
+		}
+
+		for (const pending of pendingOffsets) {
+			this.encodeNode(pending.node, pending.offset);
+		}
+	}
+
+	private encodeStringTableNode(node: StringTableNode): void {
+		node.value.sort();
+
+		if (!node.value.includes('')) {
+			// * This seems to always be present at the end of string lists in Splatoon
+			// * rotation files, but populateStringTables doesn't seem to see it? And
+			// * node.value.sort() will put it at the top of the list rather than the end.
+			// * So just manually add it here
+			node.value.push('');
+		}
+
+		const count = node.value.length;
+
+		this.streamOut.writeUint24(count - 1);
+
+		const addressTableSize = count * 4;
+		const stringAreaStart = 4 + addressTableSize;
+
+		const offsets: number[] = [];
+		let cursor = stringAreaStart;
+
+		for (const str of node.value) {
+			offsets.push(cursor);
+			cursor += str.length + 1;
+		}
+
+		for (const offset of offsets) {
+			this.streamOut.writeUint32(offset);
+		}
+
+		for (const str of node.value) {
+			this.streamOut.writeBytes(Buffer.from(str));
+			this.streamOut.writeUint8(0);
+		}
+	}
+
+	private encodeBinaryTableNode(node: BinaryTableNode): void {
+		// TODO - Implement this
+		throw new Error('BinaryTableNodes not implemented');
+	}
+
+	private encodeBoolNode(node: BoolNode): void {
+		// TODO - Implement this
+		throw new Error('BoolNodes not implemented');
+	}
+
+	private encodeIntegerNode(node: IntegerNode): void {
+		// TODO - Implement this
+		throw new Error('IntegerNodes not implemented');
+	}
+
+	private encodeFloatNode(node: FloatNode): void {
+		// TODO - Implement this
+		throw new Error('FloatNodes not implemented');
+	}
+
+	private encodeUnsignedIntegerNode(node: UnsignedIntegerNode): void {
+		// TODO - Implement this
+		throw new Error('UnsignedIntegerNodes not implemented');
+	}
+
+	private encodeInteger64Node(node: Integer64Node): void {
+		// TODO - Implement this
+		throw new Error('Integer64Nodes not implemented');
+	}
+
+	private encodeUnsignedInteger64Node(node: UnsignedInteger64Node): void {
+		// TODO - Implement this
+		throw new Error('UnsignedInteger64Nodes not implemented');
+	}
+
+	private encodeDoubleNode(node: DoubleNode): void {
+		// TODO - Implement this
+		throw new Error('DoubleNodes not implemented');
+	}
+
+	private encodeNullNode(node: NullNode): void {
+		// TODO - Implement this
+		throw new Error('NullNodes not implemented');
 	}
 
 	public toJSON(): RootNode {
