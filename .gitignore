@@ -60,7 +60,6 @@ typings/
 # custom
 .DS_Store
 dist
-test
 *.cia
 *.tmd
 *.tik
