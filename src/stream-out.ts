@@ -192,9 +192,9 @@ export default class StreamOut {
 	 * @param int32 - The value to write
 	 */
 	public writeInt32LE(int32: number): void {
-		this.ensureCapacity(8);
+		this.ensureCapacity(4);
 		this.buffer.writeInt32LE(int32, this.pos);
-		this.pos += 8;
+		this.pos += 4;
 	}
 
 	/**
@@ -212,9 +212,9 @@ export default class StreamOut {
 	 * @param int64 - The value to write
 	 */
 	public writeInt64LE(int64: bigint): void {
-		this.ensureCapacity(4);
+		this.ensureCapacity(8);
 		this.buffer.writeBigInt64LE(int64, this.pos);
-		this.pos += 4;
+		this.pos += 8;
 	}
 
 	/**
@@ -325,7 +325,11 @@ export default class StreamOut {
 	 * @param uint16 - The value to write
 	 */
 	public writeUint16(uint16: number): void {
-		this.bom === 'le' ? this.writeUint16LE(uint16) : this.writeUint16BE(uint16);
+		if (this.bom === 'le') {
+			this.writeUint16LE(uint16);
+		} else {
+			this.writeUint16BE(uint16);
+		}
 	}
 
 	/**
@@ -336,7 +340,11 @@ export default class StreamOut {
 	 * @param int16 - The value to write
 	 */
 	public writeInt16(int16: number): void {
-		this.bom === 'le' ? this.writeInt16LE(int16) : this.writeInt16BE(int16);
+		if (this.bom === 'le') {
+			this.writeInt16LE(int16);
+		} else {
+			this.writeInt16BE(int16);
+		}
 	}
 
 	/**
@@ -347,7 +355,11 @@ export default class StreamOut {
 	 * @param uint24 - The value to write
 	 */
 	public writeUint24(uint24: number): void {
-		this.bom === 'le' ? this.writeUint24LE(uint24) : this.writeUint24BE(uint24);
+		if (this.bom === 'le') {
+			this.writeUint24LE(uint24);
+		} else {
+			this.writeUint24BE(uint24);
+		}
 	}
 
 	/**
@@ -358,7 +370,11 @@ export default class StreamOut {
 	 * @param int24 - The value to write
 	 */
 	public writeInt24(int24: number): void {
-		this.bom === 'le' ? this.writeInt24LE(int24) : this.writeInt24BE(int24);
+		if (this.bom === 'le') {
+			this.writeInt24LE(int24);
+		} else {
+			this.writeInt24BE(int24);
+		}
 	}
 
 	/**
@@ -369,7 +385,11 @@ export default class StreamOut {
 	 * @param uint32 - The value to write
 	 */
 	public writeUint32(uint32: number): void {
-		this.bom === 'le' ? this.writeUint32LE(uint32) : this.writeUint32BE(uint32);
+		if (this.bom === 'le') {
+			this.writeUint32LE(uint32);
+		} else {
+			this.writeUint32BE(uint32);
+		}
 	}
 
 	/**
@@ -380,7 +400,11 @@ export default class StreamOut {
 	 * @param int32 - The value to write
 	 */
 	public writeInt32(int32: number): void {
-		this.bom === 'le' ? this.writeInt32LE(int32) : this.writeInt32BE(int32);
+		if (this.bom === 'le') {
+			this.writeInt32LE(int32);
+		} else {
+			this.writeInt32BE(int32);
+		}
 	}
 
 	/**
@@ -391,7 +415,11 @@ export default class StreamOut {
 	 * @param uint64 - The value to write
 	 */
 	public writeUint64(uint64: bigint): void {
-		this.bom === 'le' ? this.writeUint64LE(uint64) : this.writeUint64BE(uint64);
+		if (this.bom === 'le') {
+			this.writeUint64LE(uint64);
+		} else {
+			this.writeUint64BE(uint64);
+		}
 	}
 
 	/**
@@ -402,7 +430,11 @@ export default class StreamOut {
 	 * @param int64 - The value to write
 	 */
 	public writeInt64(int64: bigint): void {
-		this.bom === 'le' ? this.writeInt64LE(int64) : this.writeInt64BE(int64);
+		if (this.bom === 'le') {
+			this.writeInt64LE(int64);
+		} else {
+			this.writeInt64BE(int64);
+		}
 	}
 
 	/**
@@ -413,6 +445,10 @@ export default class StreamOut {
 	 * @param float - The value to write
 	 */
 	public writeFloat(float: number): void {
-		this.bom === 'le' ? this.writeFloatLE(float) : this.writeFloatBE(float);
+		if (this.bom === 'le') {
+			this.writeFloatLE(float);
+		} else {
+			this.writeFloatBE(float);
+		}
 	}
 }
