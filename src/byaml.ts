@@ -1,4 +1,6 @@
 import FileStream from '@/file-stream';
+import StreamOut from '@/stream-out';
+import type StoredOffset from '@/stored-offset';
 
 const MAGIC_BE = Buffer.from('BY');
 const MAGIC_LE = Buffer.from('YB');
@@ -21,94 +23,115 @@ enum NodeTypes {
 	NULL = 0xFF // * Any version
 }
 
-interface Node {
-	type: NodeTypes.STRING | NodeTypes.BINARY_DATA | NodeTypes.BINARY_DATA_WITH_PARAM | NodeTypes.ARRAY | NodeTypes.DICTIONARY | NodeTypes.STRING_TABLE | NodeTypes.BINARY_TABLE | NodeTypes.BOOL | NodeTypes.INT32 | NodeTypes.FLOAT | NodeTypes.UINT32 | NodeTypes.INT64 | NodeTypes.UINT64 | NodeTypes.DOUBLE | NodeTypes.NULL;
-	value: unknown;
-}
-
 type StringNode = {
-	type: 0xA0;
+	type: NodeTypes.STRING;
 	value: string;
 };
 
 type BinaryDataNode = {
-	type: 0xA1;
+	type: NodeTypes.BINARY_DATA;
 	value: Buffer;
 };
 
 type BinaryDataWithParamNode = {
-	type: 0xA2;
+	type: NodeTypes.BINARY_DATA_WITH_PARAM;
 	value: Buffer; // TODO - What is the param?
 };
 
 type ArrayNode = {
-	type: 0xC0;
+	type: NodeTypes.ARRAY;
 	value: Node[];
 };
 
 type DictionaryNode = {
-	type: 0xC1;
+	type: NodeTypes.DICTIONARY;
 	value: Record<string, Node>;
 };
 
 type StringTableNode = {
-	type: 0xC2;
+	type: NodeTypes.STRING_TABLE;
 	value: string[];
 };
 
 type BinaryTableNode = {
-	type: 0xC3;
+	type: NodeTypes.BINARY_TABLE;
 	value: Buffer[];
 };
 
 type BoolNode = {
-	type: 0xD0;
+	type: NodeTypes.BOOL;
 	value: boolean;
 };
 
 type IntegerNode = {
-	type: 0xD1;
+	type: NodeTypes.INT32;
 	value: number;
 };
 
 type FloatNode = {
-	type: 0xD2;
+	type: NodeTypes.FLOAT;
 	value: number;
 };
 
 type UnsignedIntegerNode = {
-	type: 0xD3;
+	type: NodeTypes.UINT32;
 	value: number;
 };
 
 type Integer64Node = {
-	type: 0xD4;
+	type: NodeTypes.INT64;
 	value: bigint;
 };
 
 type UnsignedInteger64Node = {
-	type: 0xD5;
+	type: NodeTypes.UINT64;
 	value: bigint;
 };
 
 type DoubleNode = {
-	type: 0xD6;
+	type: NodeTypes.DOUBLE;
 	value: number;
 };
 
 type NullNode = {
-	type: 0xFF;
+	type: NodeTypes.NULL;
 	value: null;
 };
 
 type RootNode = DictionaryNode | ArrayNode;
 
+type Node = StringNode | BinaryDataNode | BinaryDataWithParamNode | ArrayNode | DictionaryNode | StringTableNode | BinaryTableNode | BoolNode | IntegerNode | FloatNode | UnsignedIntegerNode | Integer64Node | UnsignedInteger64Node | DoubleNode | NullNode;
+
+type PartialNode = Partial<Node>;
+
+type BYAMLEncodeSettings = {
+	version?: number;
+	endianness?: 'le' | 'be';
+	useBinaryTable?: boolean;
+	rootNode?: RootNode;
+};
+
 export default class BYAML {
 	private stream: FileStream;
-	private dictionaryKeyTable: StringTableNode;
-	private stringTable: StringTableNode;
-	private binaryDataTable: BinaryTableNode; // * Only seen in older versions
+	private streamOut: StreamOut;
+	private dictionaryKeyTable: StringTableNode = {
+		type: NodeTypes.STRING_TABLE,
+		value: []
+	};
+
+	private stringTable: StringTableNode = {
+		type: NodeTypes.STRING_TABLE,
+		value: []
+	};
+
+	private binaryDataTable: BinaryTableNode = {
+		type: NodeTypes.BINARY_TABLE,
+		value: []
+	}; // * Only seen in some versions and in Mario Kart 8
+
 	private rootNodeOffset: number;
+	private endianness: 'le' | 'be';
+	private useBinaryTable = false;
 
 	/**
 	 * BYAML version number
@@ -236,8 +259,12 @@ export default class BYAML {
 		}
 
 		if (magic.equals(MAGIC_BE)) {
-			this.stream.bom = 'be';
+			this.endianness = 'be';
+		} else {
+			this.endianness = 'le';
 		}
+
+		this.stream.bom = this.endianness;
 
 		this.version = this.stream.readUInt16();
 
@@ -245,13 +272,10 @@ export default class BYAML {
 		const stringTableOffset = this.stream.readUInt32();
 		let binaryDataTableOffset = 0;
 
-		// * Binary data table offset only exists in versions before v4
-		if (this.version > 4) {
-			// * Some games, like Splatoon, do not update the BYAML version number.
-			// * To account for these cases check the offset of this table.
-			if (dictionaryKeyTableOffset !== 0x10) {
-				binaryDataTableOffset = this.stream.readUInt32();
-			}
+		// * Binary data tables only exist in some versions and in Mario Kart 8,
+		// * so we need to heuristically check if it exists or not
+		if (dictionaryKeyTableOffset !== 0x10) {
+			binaryDataTableOffset = this.stream.readUInt32();
 		}
 
 		this.rootNodeOffset = this.stream.readUInt32();
@@ -265,6 +289,7 @@ export default class BYAML {
 		if (binaryDataTableOffset) {
 			this.stream.seek(binaryDataTableOffset + 1); // * Skip the type byte
 			this.binaryDataTable = this.readBinaryTableNode();
+			this.useBinaryTable = true;
 		}
 	}
 
@@ -352,51 +377,59 @@ export default class BYAML {
 		const elements: Node[] = [];
 
 		for (const nodeType of typeTable) {
-			const value = this.stream.readUInt32();
+			let node: PartialNode = {
+				type: nodeType
+			};
 
-			// * Values for container nodes are offsets to the node relative to the start of the file
-			if (nodeType === NodeTypes.ARRAY || nodeType === NodeTypes.DICTIONARY) {
-				const before = this.stream.tell();
-
-				this.stream.seek(value);
-
-				elements.push(this.readNode());
-
-				this.stream.seek(before);
-
-				continue;
+			switch (node.type) {
+				case NodeTypes.STRING:
+					node.value = this.stringTable.value[this.stream.readUInt32()];
+					break;
+				case NodeTypes.ARRAY:
+				case NodeTypes.DICTIONARY:
+				case NodeTypes.STRING_TABLE:
+				case NodeTypes.BINARY_TABLE:
+				case NodeTypes.INT64:
+				case NodeTypes.UINT64:
+				case NodeTypes.DOUBLE:
+					const offset = this.stream.readUInt32();
+					const before = this.stream.tell();
+					this.stream.seek(offset);
+					node = this.readNode();
+					this.stream.seek(before);
+					break;
+				case NodeTypes.BINARY_DATA:
+					const offsetOrIndex = this.stream.readUInt32();
+					if (this.binaryDataTable.value.length !== 0) {
+						node.value = this.binaryDataTable.value[offsetOrIndex];
+					} else {
+						const before = this.stream.tell();
+						this.stream.seek(offsetOrIndex);
+						node = this.readBinaryDataNode();
+						this.stream.seek(before);
+					}
+					break;
+				case NodeTypes.BOOL:
+					node.value = !!this.stream.readUInt32();
+					break;
+				case NodeTypes.INT32:
+					node.value = this.stream.readInt32();
+					break;
+				case NodeTypes.FLOAT:
+					node.value = this.stream.readFloat();
+					break;
+				case NodeTypes.UINT32:
+					node.value = this.stream.readUInt32();
+					break;
+				case NodeTypes.NULL:
+					node.value = null;
+					this.stream.skip(4);
+					break;
+				default:
+					throw new Error('Unhandled array type ' + node.type);
 			}
 
-			// * Values for string nodes are indexes into the string table
-			if (nodeType === NodeTypes.STRING) {
-				elements.push({
-					type: NodeTypes.STRING,
-					value: this.stringTable.value[value]
-				});
-
-				continue;
-			}
-
-			// * All other nodes are just their value. Handle some special cases
-			if (nodeType === NodeTypes.BOOL) {
-				elements.push({
-					type: NodeTypes.BOOL,
-					value: !!value
-				});
-
-				continue;
-			}
-
-			if (nodeType === NodeTypes.NULL) {
-				elements.push({
-					type: NodeTypes.NULL,
-					value: null
-				});
-
-				continue;
-			}
-
-			elements.push({ type: nodeType, value });
+			elements.push(node as Node);
 		}
 
 		return {
@@ -412,58 +445,60 @@ export default class BYAML {
 		for (let i = 0; i < count; i++) {
 			const keyIndex = this.stream.readUInt24();
 			const nodeType = this.stream.readUInt8();
-			const value = this.stream.readUInt32();
 			const key = this.dictionaryKeyTable.value[keyIndex];
+			let node: PartialNode = {
+				type: nodeType
+			};
 
-			// * Values for container nodes, and new number nodes, are offsets to the node relative to the start of the file
-			if (
-				nodeType === NodeTypes.ARRAY ||
-				nodeType === NodeTypes.DICTIONARY ||
-				nodeType === NodeTypes.INT64 ||
-				nodeType === NodeTypes.UINT64 ||
-				nodeType === NodeTypes.DOUBLE
-			) {
-				const before = this.stream.tell();
-
-				this.stream.seek(value);
-
-				map[key] = this.readNode();
-
-				this.stream.seek(before);
-
-				continue;
+			switch (node.type) {
+				case NodeTypes.STRING:
+					node.value = this.stringTable.value[this.stream.readUInt32()];
+					break;
+				case NodeTypes.ARRAY:
+				case NodeTypes.DICTIONARY:
+				case NodeTypes.STRING_TABLE:
+				case NodeTypes.BINARY_TABLE:
+				case NodeTypes.INT64:
+				case NodeTypes.UINT64:
+				case NodeTypes.DOUBLE:
+					const offset = this.stream.readUInt32();
+					const before = this.stream.tell();
+					this.stream.seek(offset);
+					node = this.readNode();
+					this.stream.seek(before);
+					break;
+				case NodeTypes.BINARY_DATA:
+					const offsetOrIndex = this.stream.readUInt32();
+					if (this.binaryDataTable.value.length !== 0) {
+						node.value = this.binaryDataTable.value[offsetOrIndex];
+					} else {
+						const before = this.stream.tell();
+						this.stream.seek(offsetOrIndex);
+						node = this.readBinaryDataNode();
+						this.stream.seek(before);
+					}
+					break;
+				case NodeTypes.BOOL:
+					node.value = !!this.stream.readUInt32();
+					break;
+				case NodeTypes.INT32:
+					node.value = this.stream.readInt32();
+					break;
+				case NodeTypes.FLOAT:
+					node.value = this.stream.readFloat();
+					break;
+				case NodeTypes.UINT32:
+					node.value = this.stream.readUInt32();
+					break;
+				case NodeTypes.NULL:
+					node.value = null;
+					this.stream.skip(4);
+					break;
+				default:
+					throw new Error('Unhandled dictionary type ' + node.type);
 			}
 
-			// * Values for string nodes are indexes into the string table
-			if (nodeType === NodeTypes.STRING) {
-				map[key] = {
-					type: NodeTypes.STRING,
-					value: this.stringTable.value[value]
-				};
-
-				continue;
-			}
-
-			// * All other nodes are just their value. Handle some special cases
-			if (nodeType === NodeTypes.BOOL) {
-				map[key] = {
-					type: NodeTypes.BOOL,
-					value: !!value
-				};
-
-				continue;
-			}
-
-			if (nodeType === NodeTypes.NULL) {
-				map[key] = {
-					type: NodeTypes.NULL,
-					value: null
-				};
-
-				continue;
-			}
-
-			map[key] = { type: nodeType, value };
+			map[key] = node as Node;
 		}
 
 		return {
@@ -474,7 +509,7 @@ export default class BYAML {
 
 	private readStringTableNode(): StringTableNode {
 		const count = this.stream.readUInt24() + 1;
-		const offsetStart = this.stream.tell() - 4; // * Addresses of strings are relative to the start of the node
+		const offsetStart = this.stream.tell() - 4; // * Addresses are relative to the start of the node
 
 		const addressTable: number[] = [];
 
@@ -508,12 +543,33 @@ export default class BYAML {
 	}
 
 	private readBinaryTableNode(): BinaryTableNode {
-		// TODO - Implement this
-		throw new Error('BinaryTableNodes not implemented');
+		const count = this.stream.readUInt24() + 1;
+		const offsetStart = this.stream.tell() - 4; // * Addresses are relative to the start of the node
+
+		const addressTable: number[] = [];
+
+		for (let i = 0; i < count; i++) {
+			const offset = this.stream.readUInt32();
+			const address = offsetStart + offset;
+
+			addressTable.push(address);
+		}
+
+		const blobs: Buffer[] = [];
+
+		// * -1 because the last address is the end of the table
+		for (let i = 0; i < addressTable.length - 1; i++) {
+			this.stream.seek(addressTable[i]);
+
+			const size = addressTable[i + 1] - addressTable[i];
+			const blob = this.stream.readBytes(size);
+
+			blobs.push(blob);
+		}
 
 		return {
 			type: NodeTypes.BINARY_TABLE,
-			value: []
+			value: blobs
 		};
 	}
 
@@ -595,6 +651,416 @@ export default class BYAML {
 			type: NodeTypes.NULL,
 			value: null
 		};
+	}
+
+	public encode(settings?: BYAMLEncodeSettings): Buffer {
+		if (!settings) {
+			settings = {
+				version: this.version,
+				endianness: this.endianness,
+				useBinaryTable: this.useBinaryTable,
+				rootNode: this.rootNode
+			};
+		}
+
+		if (settings.version === undefined) {
+			if (this.version === undefined) {
+				throw new Error('Failed to encode BYAML file. Missing version');
+			}
+
+			settings.version = this.version;
+		}
+
+		if (settings.useBinaryTable === undefined) {
+			settings.useBinaryTable = this.useBinaryTable;
+		}
+
+		if (settings.endianness === undefined) {
+			if (this.endianness === undefined) {
+				throw new Error('Failed to encode BYAML file. Missing endianness');
+			}
+
+			settings.endianness = this.endianness;
+		}
+
+		if (settings.rootNode === undefined) {
+			if (this.rootNode === undefined) {
+				throw new Error('Failed to encode BYAML file. Missing root node');
+			}
+
+			settings.rootNode = this.rootNode;
+		}
+
+		// * Reset back to empty in case the same instance is reused
+		this.dictionaryKeyTable.value = [];
+		this.stringTable.value = [];
+		this.binaryDataTable.value = [];
+
+		this.populateTables(settings.rootNode);
+
+		this.streamOut = new StreamOut();
+		this.streamOut.bom = settings.endianness;
+
+		this.streamOut.writeBytes(settings.endianness === 'le' ? MAGIC_LE : MAGIC_BE);
+		this.streamOut.writeUint16(settings.version);
+
+		let dictionaryKeyTableOffset: StoredOffset | undefined;
+		let stringTableOffset: StoredOffset | undefined;
+		let binaryDataTableOffset: StoredOffset | undefined;
+
+		if (this.dictionaryKeyTable.value.length !== 0) {
+			dictionaryKeyTableOffset = this.streamOut.storeOffset();
+		} else {
+			this.streamOut.writeUint32(0);
+		}
+
+		if (this.stringTable.value.length !== 0) {
+			stringTableOffset = this.streamOut.storeOffset();
+		} else {
+			this.streamOut.writeUint32(0);
+		}
+
+		if (settings.useBinaryTable) {
+			binaryDataTableOffset = this.streamOut.storeOffset();
+		}
+
+		const rootNodeOffset = this.streamOut.storeOffset();
+
+		if (dictionaryKeyTableOffset) {
+			this.encodeNode(this.dictionaryKeyTable, dictionaryKeyTableOffset);
+		}
+
+		if (stringTableOffset) {
+			this.encodeNode(this.stringTable, stringTableOffset);
+		}
+
+		if (binaryDataTableOffset) {
+			this.encodeNode(this.binaryDataTable, binaryDataTableOffset);
+		}
+
+		this.encodeNode(settings.rootNode, rootNodeOffset);
+
+		return this.streamOut.bytes();
+	}
+
+	private populateTables(node: Node): void {
+		if (node.type === NodeTypes.DICTIONARY) {
+			for (const key in node.value) {
+				if (!this.dictionaryKeyTable.value.includes(key)) {
+					this.dictionaryKeyTable.value.push(key);
+				}
+
+				this.populateTables(node.value[key]);
+			}
+		}
+
+		if (node.type === NodeTypes.STRING && !this.stringTable.value.includes(node.value)) {
+			this.stringTable.value.push(node.value);
+		}
+
+		if (node.type === NodeTypes.ARRAY) {
+			for (const child of node.value) {
+				this.populateTables(child);
+			}
+		}
+
+		// TODO - Does this also get done for BINARY_DATA_WITH_PARAM?
+		if (node.type === NodeTypes.BINARY_DATA) {
+			this.binaryDataTable.value.push(node.value);
+		}
+	}
+
+	private encodeNode(node: Node, offset: StoredOffset): void {
+		this.streamOut.alignBlock(4);
+		offset.write();
+
+		this.streamOut.writeUint8(node.type);
+
+		switch (node.type) {
+			case NodeTypes.STRING:
+				this.encodeStringNode(node);
+				break;
+			case NodeTypes.BINARY_DATA:
+				this.encodeBinaryDataNode(node);
+				break;
+			case NodeTypes.BINARY_DATA_WITH_PARAM:
+				this.encodeBinaryDataWithParamNode(node);
+				break;
+			case NodeTypes.ARRAY:
+				this.encodeArrayNode(node);
+				break;
+			case NodeTypes.DICTIONARY:
+				this.encodeDictionaryNode(node);
+				break;
+			case NodeTypes.STRING_TABLE:
+				this.encodeStringTableNode(node);
+				break;
+			case NodeTypes.BINARY_TABLE:
+				this.encodeBinaryTableNode(node);
+				break;
+			case NodeTypes.BOOL:
+				this.encodeBoolNode(node);
+				break;
+			case NodeTypes.INT32:
+				this.encodeIntegerNode(node);
+				break;
+			case NodeTypes.FLOAT:
+				this.encodeFloatNode(node);
+				break;
+			case NodeTypes.UINT32:
+				this.encodeUnsignedIntegerNode(node);
+				break;
+			case NodeTypes.INT64:
+				this.encodeInteger64Node(node);
+				break;
+			case NodeTypes.UINT64:
+				this.encodeUnsignedInteger64Node(node);
+				break;
+			case NodeTypes.DOUBLE:
+				this.encodeDoubleNode(node);
+				break;
+			case NodeTypes.NULL:
+				this.encodeNullNode(node);
+				break;
+		}
+	}
+
+	private encodeStringNode(node: StringNode): void {
+		this.streamOut.writeUint32(this.stringTable.value.indexOf(node.value));
+	}
+
+	private encodeBinaryDataNode(_node: BinaryDataNode): void {
+		// TODO - Implement this
+		throw new Error('BinaryDataNodes not implemented');
+	}
+
+	private encodeBinaryDataWithParamNode(_node: BinaryDataWithParamNode): void {
+		// TODO - Implement this
+		throw new Error('BinaryDataWithParamNodes not implemented');
+	}
+
+	private encodeArrayNode(node: ArrayNode): void {
+		const count = node.value.length;
+
+		this.streamOut.writeUint24(count);
+
+		for (const { type } of node.value) {
+			this.streamOut.writeUint8(type);
+		}
+
+		this.streamOut.alignBlock(4);
+
+		const pendingOffsets: {
+			offset: StoredOffset;
+			node: Node;
+		}[] = [];
+
+		for (const entry of node.value) {
+			switch (entry.type) {
+				case NodeTypes.STRING:
+					this.encodeStringNode(entry);
+					break;
+				case NodeTypes.ARRAY:
+				case NodeTypes.DICTIONARY:
+				case NodeTypes.STRING_TABLE:
+				case NodeTypes.BINARY_TABLE:
+				case NodeTypes.INT64:
+				case NodeTypes.UINT64:
+				case NodeTypes.DOUBLE:
+					pendingOffsets.push({
+						offset: this.streamOut.storeOffset(),
+						node: entry
+					});
+					break;
+				case NodeTypes.BINARY_DATA:
+					if (this.binaryDataTable.value.length !== 0) {
+						const index = this.binaryDataTable.value.findIndex(buffer => buffer.equals(entry.value));
+						this.streamOut.writeUint32(index);
+					} else {
+						pendingOffsets.push({
+							offset: this.streamOut.storeOffset(),
+							node: entry
+						});
+					}
+					break;
+				case NodeTypes.BOOL:
+					this.encodeBoolNode(entry);
+					break;
+				case NodeTypes.INT32:
+					this.encodeIntegerNode(entry);
+					break;
+				case NodeTypes.FLOAT:
+					this.encodeFloatNode(entry);
+					break;
+				case NodeTypes.UINT32:
+					this.encodeUnsignedIntegerNode(entry);
+					break;
+				case NodeTypes.NULL:
+					this.encodeNullNode(entry);
+			}
+		}
+
+		for (const pending of pendingOffsets) {
+			this.encodeNode(pending.node, pending.offset);
+		}
+	}
+
+	private encodeDictionaryNode(node: DictionaryNode): void {
+		const entries = Object.entries(node.value);
+		const count = entries.length;
+
+		this.streamOut.writeUint24(count);
+
+		const pendingOffsets: {
+			offset: StoredOffset;
+			node: Node;
+		}[] = [];
+
+		for (const [key, entry] of entries) {
+			const keyIndex = this.dictionaryKeyTable.value.indexOf(key);
+
+			this.streamOut.writeUint24(keyIndex);
+			this.streamOut.writeUint8(entry.type);
+
+			switch (entry.type) {
+				case NodeTypes.STRING:
+					this.encodeStringNode(entry);
+					break;
+				case NodeTypes.ARRAY:
+				case NodeTypes.DICTIONARY:
+				case NodeTypes.STRING_TABLE:
+				case NodeTypes.BINARY_TABLE:
+				case NodeTypes.INT64:
+				case NodeTypes.UINT64:
+				case NodeTypes.DOUBLE:
+					pendingOffsets.push({
+						offset: this.streamOut.storeOffset(),
+						node: entry
+					});
+					break;
+				case NodeTypes.BINARY_DATA:
+					if (this.binaryDataTable.value.length !== 0) {
+						const index = this.binaryDataTable.value.findIndex(buffer => buffer.equals(entry.value));
+						this.streamOut.writeUint32(index);
+					} else {
+						pendingOffsets.push({
+							offset: this.streamOut.storeOffset(),
+							node: entry
+						});
+					}
+					break;
+				case NodeTypes.BOOL:
+					this.encodeBoolNode(entry);
+					break;
+				case NodeTypes.INT32:
+					this.encodeIntegerNode(entry);
+					break;
+				case NodeTypes.FLOAT:
+					this.encodeFloatNode(entry);
+					break;
+				case NodeTypes.UINT32:
+					this.encodeUnsignedIntegerNode(entry);
+					break;
+				case NodeTypes.NULL:
+					this.encodeNullNode(entry);
+			}
+		}
+
+		for (const pending of pendingOffsets) {
+			this.encodeNode(pending.node, pending.offset);
+		}
+	}
+
+	private encodeStringTableNode(node: StringTableNode): void {
+		node.value.sort();
+
+		const count = node.value.length;
+
+		this.streamOut.writeUint24(count);
+
+		const addressTableSize = (count + 1) * 4;
+		const stringAreaStart = 4 + addressTableSize;
+
+		const offsets: number[] = [];
+		let cursor = stringAreaStart;
+
+		for (const str of node.value) {
+			offsets.push(cursor);
+			cursor += str.length + 1;
+		}
+
+		offsets.push(cursor); // * Tables always end with a pointer to the end of the table
+
+		for (const offset of offsets) {
+			this.streamOut.writeUint32(offset);
+		}
+
+		for (const str of node.value) {
+			this.streamOut.writeBytes(Buffer.from(str));
+			this.streamOut.writeUint8(0);
+		}
+	}
+
+	private encodeBinaryTableNode(node: BinaryTableNode): void {
+		const count = node.value.length;
+
+		this.streamOut.writeUint24(count);
+
+		const addressTableSize = (count + 1) * 4;
+		const blobAreaStart = 4 + addressTableSize;
+
+		const offsets: number[] = [];
+		let cursor = blobAreaStart;
+
+		for (const str of node.value) {
+			offsets.push(cursor);
+			cursor += str.length;
+		}
+
+		offsets.push(cursor); // * Tables always end with a pointer to the end of the table
+
+		for (const offset of offsets) {
+			this.streamOut.writeUint32(offset);
+		}
+
+		for (const blob of node.value) {
+			this.streamOut.writeBytes(blob);
+		}
+	}
+
+	private encodeBoolNode(node: BoolNode): void {
+		this.streamOut.writeUint32(node.value ? 1 : 0);
+	}
+
+	private encodeIntegerNode(node: IntegerNode): void {
+		this.streamOut.writeInt32(node.value);
+	}
+
+	private encodeFloatNode(node: FloatNode): void {
+		this.streamOut.writeFloat(node.value);
+	}
+
+	private encodeUnsignedIntegerNode(node: UnsignedIntegerNode): void {
+		this.streamOut.writeUint32(node.value);
+	}
+
+	private encodeInteger64Node(_node: Integer64Node): void {
+		// TODO - Implement this
+		throw new Error('Integer64Nodes not implemented');
+	}
+
+	private encodeUnsignedInteger64Node(_node: UnsignedInteger64Node): void {
+		// TODO - Implement this
+		throw new Error('UnsignedInteger64Nodes not implemented');
+	}
+
+	private encodeDoubleNode(_node: DoubleNode): void {
+		// TODO - Implement this
+		throw new Error('DoubleNodes not implemented');
+	}
+
+	private encodeNullNode(_node: NullNode): void {
+		this.streamOut.writeUint32(0);
 	}
 
 	public toJSON(): RootNode {
