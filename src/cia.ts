@@ -1,8 +1,8 @@
-import FileStream from '@/file-stream';
-import Certificate from '@/certificate';
-import Ticket from '@/ticket';
-import TMD from '@/tmd';
-import SMDH from '@/smdh';
+import { FileStream } from '@/file-stream';
+import { Certificate } from '@/certificate';
+import { Ticket } from '@/ticket';
+import { TMD } from '@/tmd';
+import { SMDH } from '@/smdh';
 
 export const BLOCK_SIZE = 0x40; // * 64 byte blocks
 
@@ -19,7 +19,7 @@ interface CIAMeta {
 	iconData: SMDH;
 }
 
-export default class CIA {
+export class CIA {
 	private stream: FileStream;
 	private encryptedContents: Buffer;
 

@@ -1,4 +1,4 @@
-import FileStream from '@/file-stream';
+import { FileStream } from '@/file-stream';
 
 const MAGIC_BE = Buffer.from('BY');
 const MAGIC_LE = Buffer.from('YB');
@@ -103,7 +103,7 @@ type NullNode = {
 
 type RootNode = DictionaryNode | ArrayNode;
 
-export default class BYAML {
+export class BYAML {
 	private stream: FileStream;
 	private dictionaryKeyTable: StringTableNode;
 	private stringTable: StringTableNode;

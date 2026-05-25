@@ -1,5 +1,5 @@
 import zlib from 'node:zlib';
-import FileStream from '@/file-stream';
+import { FileStream } from '@/file-stream';
 
 // * Unsure what the real name of this is. Switch Toolbox uses the ZCMP class for
 // * files that end with `*.cmp`, however `main.sgarc.cmp` found in Mii Maker has
@@ -9,7 +9,7 @@ import FileStream from '@/file-stream';
  * CMP handles the decompression of files using ZLIB. Files of this type usually end
  * with `*.cmp`
  */
-export default class CMP {
+export class CMP {
 	private stream: FileStream;
 
 	/**

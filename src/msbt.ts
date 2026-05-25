@@ -1,11 +1,11 @@
-import FileStream from '@/file-stream';
+import { FileStream } from '@/file-stream';
 
 const MSBT_MAGIC = Buffer.from('MsgStdBn');
 const BIG_ENDIAN = Buffer.from('FEFF', 'hex');
 const LITTLE_ENDIAN = Buffer.from('FFFE', 'hex');
 const NULL_TERM = Buffer.from('0000', 'hex');
 
-export default class MSBT {
+export class MSBT {
 	private stream: FileStream;
 	private sectionsCount: number;
 
