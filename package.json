@@ -1,11 +1,12 @@
 {
 	"name": "@pretendonetwork/nintendo-files",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"description": "TypeScript library for interacting with several Nintendo file formats across various consoles.",
+	"type": "commonjs",
 	"scripts": {
 		"lint": "eslint ./src",
 		"clean": "npx rimraf ./dist",
-		"build": "npm run lint && npm run clean && npx tsc && npx tsc-alias"
+		"build": "npm run lint && npm run clean && tsc && tsc-alias"
 	},
 	"keywords": [],
 	"author": "",
@@ -20,7 +21,8 @@
 		"@types/node-rsa": "^1.1.1",
 		"eslint": "^9.39.4",
 		"rimraf": "^5.0.1",
-		"tsc-alias": "^1.8.7"
+		"tsc-alias": "^1.8.7",
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
 		"image-encode": "^1.3.1",
@@ -31,64 +33,52 @@
 	],
 	"exports": {
 		".": {
-			"import": "./dist/index.js",
-			"require": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
 		},
 		"./byaml": {
-			"import": "./dist/byaml.js",
-			"require": "./dist/byaml.js",
-			"types": "./dist/byaml.d.ts"
+			"types": "./dist/byaml.d.ts",
+			"default": "./dist/byaml.js"
 		},
 		"./byml": {
-			"import": "./dist/byaml.js",
-			"require": "./dist/byaml.js",
-			"types": "./dist/byaml.d.ts"
+			"types": "./dist/byaml.d.ts",
+			"default": "./dist/byaml.js"
 		},
 		"./certificate": {
-			"import": "./dist/certificate.js",
-			"require": "./dist/certificate.js",
-			"types": "./dist/certificate.d.ts"
+			"types": "./dist/certificate.d.ts",
+			"default": "./dist/certificate.js"
 		},
 		"./cia": {
-			"import": "./dist/cia.js",
-			"require": "./dist/cia.js",
-			"types": "./dist/cia.d.ts"
+			"types": "./dist/cia.d.ts",
+			"default": "./dist/cia.js"
 		},
 		"./compression/cmp": {
-			"import": "./dist/compression/cmp.js",
-			"require": "./dist/compression/cmp.js",
-			"types": "./dist/compression/cmp.d.ts"
+			"types": "./dist/compression/cmp.d.ts",
+			"default": "./dist/compression/cmp.js"
 		},
 		"./compression/yaz0": {
-			"import": "./dist/compression/yaz0.js",
-			"require": "./dist/compression/yaz0.js",
-			"types": "./dist/compression/yaz0.d.ts"
+			"types": "./dist/compression/yaz0.d.ts",
+			"default": "./dist/compression/yaz0.js"
 		},
 		"./msbt": {
-			"import": "./dist/msbt.js",
-			"require": "./dist/msbt.js",
-			"types": "./dist/msbt.d.ts"
+			"types": "./dist/msbt.d.ts",
+			"default": "./dist/msbt.js"
 		},
 		"./me01": {
-			"import": "./dist/me01.js",
-			"require": "./dist/me01.js",
-			"types": "./dist/me01.d.ts"
+			"types": "./dist/me01.d.ts",
+			"default": "./dist/me01.js"
 		},
 		"./smdh": {
-			"import": "./dist/smdh.js",
-			"require": "./dist/smdh.js",
-			"types": "./dist/smdh.d.ts"
+			"types": "./dist/smdh.d.ts",
+			"default": "./dist/smdh.js"
 		},
 		"./ticket": {
-			"import": "./dist/ticket.js",
-			"require": "./dist/ticket.js",
-			"types": "./dist/ticket.d.ts"
+			"types": "./dist/ticket.d.ts",
+			"default": "./dist/ticket.js"
 		},
 		"./tmd": {
-			"import": "./dist/tmd.js",
-			"require": "./dist/tmd.js",
-			"types": "./dist/tmd.d.ts"
+			"types": "./dist/tmd.d.ts",
+			"default": "./dist/tmd.js"
 		}
 	}
 }
