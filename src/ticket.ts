@@ -1,8 +1,8 @@
-import FileStream from '@/file-stream';
-import Certificate from '@/certificate';
+import { FileStream } from '@/file-stream';
+import { Certificate } from '@/certificate';
 import { getSignatureSize } from '@/signatures';
 
-export default class Ticket {
+export class Ticket {
 	private stream: FileStream;
 
 	/**

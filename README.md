@@ -12,20 +12,26 @@ This package makes use of the [`"exports"` entry point](https://nodejs.org/api/p
 Each file type may be imported both individually through separate import paths, or as named exports from the package root.
 
 ```ts
-import BYAML from '@pretendonetwork/nintendo-files/byaml';
-import BYML from '@pretendonetwork/nintendo-files/byml'; // Alias of byaml export
-import Certificate from '@pretendonetwork/nintendo-files/certificate';
-import CIA from '@pretendonetwork/nintendo-files/cia';
-import MSBT from '@pretendonetwork/nintendo-files/msbt';
-import SMDH from '@pretendonetwork/nintendo-files/smdh';
-import Ticket from '@pretendonetwork/nintendo-files/ticket';
-import TMD from '@pretendonetwork/nintendo-files/tmd';
+import { BYAML } from '@pretendonetwork/nintendo-files/byaml';
+import { BYAML as BYML } from '@pretendonetwork/nintendo-files/byml'; // Alias of byaml export
+import { Certificate } from '@pretendonetwork/nintendo-files/certificate';
+import { CIA } from '@pretendonetwork/nintendo-files/cia';
+import { CMP } from '@pretendonetwork/nintendo-files/compression/cmp';
+import { Yaz0 } from '@pretendonetwork/nintendo-files/compression/yaz0';
+import { ME01 } from '@pretendonetwork/nintendo-files/me01';
+import { MSBT } from '@pretendonetwork/nintendo-files/msbt';
+import { SMDH } from '@pretendonetwork/nintendo-files/smdh';
+import { Ticket } from '@pretendonetwork/nintendo-files/ticket';
+import { TMD } from '@pretendonetwork/nintendo-files/tmd';
 
 import {
 	BYAML,
 	BYML, // Alias of byaml export
 	Certificate,
 	CIA,
+	CMP,
+	Yaz0,
+	ME01,
 	MSBT,
 	SMDH,
 	Ticket,
@@ -36,7 +42,7 @@ import {
 In order to parse each file, call one of the provided parser methods. Methods exist both as instance and static methods for convenience. Each method is designed for parse the data from various data sources. Each class has the same common parser methods. For file specific methods and fields, see the classes type defs.
 
 ```ts
-import CIA from '@pretendonetwork/nintendo-files/cia';
+import { CIA } from '@pretendonetwork/nintendo-files/cia';
 
 let cia: CIA;
 
@@ -89,7 +95,7 @@ Some classes support encoding the data back into a buffer. This is done through 
 ## Example
 ```ts
 import fs from 'node:fs';
-import CIA from '@pretendonetwork/nintendo-files/cia';
+import { CIA } from '@pretendonetwork/nintendo-files/cia';
 
 const cia = CIA.fromFile(`${__dirname}/nimbus.cia`);
 

@@ -1,12 +1,12 @@
-import FileStream from '@/file-stream';
-import Stream from '@/stream';
+import { FileStream } from '@/file-stream';
+import { Stream } from '@/stream';
 
 const YAZ0_MAGIC = Buffer.from('Yaz0');
 
 /**
  * Yaz0 handles the decompression of files using Yaz0
  */
-export default class Yaz0 {
+export class Yaz0 {
 	private stream: FileStream;
 
 	/**

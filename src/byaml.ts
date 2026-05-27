@@ -1,4 +1,4 @@
-import FileStream from '@/file-stream';
+import { FileStream } from '@/file-stream';
 import StreamOut from '@/stream-out';
 import type StoredOffset from '@/stored-offset';
 
@@ -111,7 +111,7 @@ type BYAMLEncodeSettings = {
 	rootNode?: RootNode;
 };
 
-export default class BYAML {
+export class BYAML {
 	private stream: FileStream;
 	private streamOut: StreamOut;
 	private dictionaryKeyTable: StringTableNode = {

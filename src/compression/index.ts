@@ -1,2 +1,2 @@
-export { default as CMP } from '@/compression/cmp';
-export { default as Yaz0 } from '@/compression/yaz0';
+export { CMP } from '@/compression/cmp';
+export { Yaz0 } from '@/compression/yaz0';
