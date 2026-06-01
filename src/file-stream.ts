@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { Stream } from '@/stream';
+import Stream from '@/stream';
 
-export class FileStream extends Stream {
+export default class FileStream extends Stream {
 	private fd?: number;
 	private fileSize?: number;
 

@@ -1,4 +1,4 @@
-import { FileStream } from '@/file-stream';
+import FileStream from '@/file-stream';
 
 const ME01_MAGIC = Buffer.from('ME01');
 const SA01_MAGIC = Buffer.from('SA01');
@@ -6,7 +6,7 @@ const SA01_MAGIC = Buffer.from('SA01');
 /**
  * ME01 represents a data archive file. These files can have the magic `ME01` or `SA01`
  */
-export class ME01 {
+export default class ME01 {
 	private stream: FileStream;
 
 	/**
