@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"lint": "eslint ./src",
-		"build": "npm run lint && tsdown",
+		"build": "npm run lint && tsc --noEmit && tsdown",
 		"test": "npx vitest run"
 	},
 	"repository": {
