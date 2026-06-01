@@ -1,6 +1,5 @@
 // * File format classes and exports
 export { default as BYAML } from '@/byaml';
-export { default as BYML } from '@/byaml'; // * Alias of BYAML
 
 export { default as Certificate } from '@/certificate';
 export * from '@/certificate';

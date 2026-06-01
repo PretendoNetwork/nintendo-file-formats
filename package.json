@@ -54,16 +54,6 @@
 				"default": "./dist/byaml.cjs"
 			}
 		},
-		"./byml": {
-			"import": {
-				"types": "./dist/byaml.d.mts",
-				"default": "./dist/byaml.mjs"
-			},
-			"require": {
-				"types": "./dist/byaml.d.cts",
-				"default": "./dist/byaml.cjs"
-			}
-		},
 		"./certificate": {
 			"import": {
 				"types": "./dist/certificate.d.mts",
