@@ -974,7 +974,7 @@ export default class BYAML {
 	}
 
 	private encodeStringTableNode(node: StringTableNode): void {
-		node.value.sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
+		node.value.sort();
 
 		const count = node.value.length;
 
