@@ -53,4 +53,33 @@ describe('BYAML', () => {
 		expect(json.value.TestString1.value).toBe(input1);
 		expect(json.value.TestString2.value).toBe(input2);
 	});
+
+	it('should sort dictionary keys', () => {
+		const value = {
+			type: 160,
+			value: 'hi'
+		};
+		const byaml = new BYAML();
+		byaml.rootNode = {
+			type: 193,
+			value: {
+				B: value,
+				E: value,
+				D: value,
+				C: value,
+				A: value
+			}
+		};
+
+		const buf = byaml.encode({
+			version: 1,
+			endianness: 'be',
+			useBinaryTable: false
+		});
+		const out = BYAML.fromBuffer(buf);
+		const json = out.toJSON();
+
+		const keys = Object.keys(json.value);
+		expect(keys).toStrictEqual(['A', 'B', 'C', 'D', 'E']);
+	});
 });
