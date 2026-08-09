@@ -5,7 +5,7 @@ import type StoredOffset from '@/stored-offset';
 const MAGIC_BE = Buffer.from('BY');
 const MAGIC_LE = Buffer.from('YB');
 
-enum NodeTypes {
+export enum NodeTypes {
 	STRING = 0xA0, // * Any version
 	BINARY_DATA = 0xA1, // * Versions 1 and 4+
 	BINARY_DATA_WITH_PARAM = 0xA2, // * Version 5
@@ -986,7 +986,7 @@ export default class BYAML {
 
 		for (const str of node.value) {
 			offsets.push(cursor);
-			cursor += str.length + 1;
+			cursor += Buffer.byteLength(str) + 1;
 		}
 
 		offsets.push(cursor); // * Tables always end with a pointer to the end of the table
