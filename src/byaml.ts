@@ -906,7 +906,11 @@ export default class BYAML {
 	}
 
 	private encodeDictionaryNode(node: DictionaryNode): void {
-		const entries = Object.entries(node.value);
+		const entries = Object.entries(node.value).map(([key, entry]) => ({
+			key,
+			entry,
+			keyIndex: this.dictionaryKeyTable.value.indexOf(key)
+		})).sort((a, b) => a.keyIndex - b.keyIndex);
 		const count = entries.length;
 
 		this.streamOut.writeUint24(count);
@@ -916,9 +920,7 @@ export default class BYAML {
 			node: Node;
 		}[] = [];
 
-		for (const [key, entry] of entries) {
-			const keyIndex = this.dictionaryKeyTable.value.indexOf(key);
-
+		for (const { entry, keyIndex } of entries) {
 			this.streamOut.writeUint24(keyIndex);
 			this.streamOut.writeUint8(entry.type);
 
